@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<title>Calculadora DERVIESKINARE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;
+  font-size:16px;
+  line-height:1.5;
+  color:#111827;
+  background:#fff;
+  padding:16px;
+}
+.container{max-width:900px;margin:0 auto}
+.card{
+  background:#f8fafc;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:16px;
+}
+h1{font-size:20px;font-weight:700;margin-bottom:16px;color:#0f766e}
+h2{font-size:18px;font-weight:600;margin-bottom:12px}
+label{
+  display:block;
+  font-size:14px;
+  color:#6b7280;
+  margin-top:12px;
+  margin-bottom:6px;
+  font-weight:500;
+}
+input,select{
+  width:100%;
+  padding:12px;
+  border:1px solid #e5e7eb;
+  border-radius:8px;
+  background:#fff;
+  font-size:16px;
+  font-family:inherit;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:12px;
+}
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:8px;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  margin-bottom:8px;
+  font-family:inherit;
+  touch-action:manipulation;
+}
+.btn-add{background:#0f766e;color:#fff}
+.btn-clear{background:#ef4444;color:#fff}
+.btn-download{background:#fff;color:#111827;border:1px solid #e5e7eb}
+button:active{transform:scale(0.98);opacity:0.8}
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+  font-size:14px;
+}
+th,td{
+  padding:10px 6px;
+  text-align:left;
+  border-bottom:1px solid #e5e7eb;
+}
+th{
+  background:#f1f5f9;
+  font-weight:600;
+  font-size:12px;
+  color:#6b7280;
+}
+.right{text-align:right}
+.input-small{
+  width:55px;
+  padding:6px;
+  font-size:14px;
+  border:1px solid #e5e7eb;
+  border-radius:4px;
+  text-align:center;
+}
+.btn-delete{
+  background:#ef4444;
+  color:#fff;
+  border:none;
+  padding:4px 10px;
+  border-radius:4px;
+  font-size:18px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.totals td{font-weight:600}
+.total-row{font-size:16px;color:#0f766e}
+.overflow{overflow-x:auto;-webkit-overflow-scrolling:touch}
+@media (max-width:600px){
+  .grid{grid-template-columns:1fr}
+  body{padding:12px}
+  h1{font-size:18px}
+  table{font-size:13px}
+  th,td{padding:8px 4px}
+  .input-small{width:50px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>DERVIESKINARE · Calculadora</h1>
+
+  <div class="card">
+    <h2>Agregar producto</h2>
+
+    <label>Producto</label>
+    <select id="selectProducto" onchange="cambiarProducto()">
+      <option value="Agua micelar|89|15960">Agua micelar</option>
+      <option value="Caléndula|20|24360">Caléndula</option>
+      <option value="Células madres|25|28140">Células madres</option>
+      <option value="Despigmentante soft|5|26775">Despigmentante soft</option>
+      <option value="Emulsión de karité|76|24360">Emulsión de karité</option>
+      <option value="Espuma oil control|131|21735">Espuma oil control</option>
+      <option value="Espuma termal|132|21735">Espuma termal</option>
+      <option value="Hialcrem|86|25725">Hialcrem</option>
+      <option value="Loción termal|7|14805">Loción termal</option>
+      <option value="Rosa mosqueta|26|28140">Rosa mosqueta</option>
+      <option value="Sérum Niacinamida|103|29400">Sérum Niacinamida</option>
+      <option value="Sérum Vit. C|85|34650">Sérum Vit. C</option>
+      <option value="Shock Vit A (corporal)|75|19740">Shock Vit A (corporal)</option>
+      <option value="Ultra hidratante Urea|36|21735">Ultra hidratante Urea</option>
+      <option value="Vitamina C shock|24|28140">Vitamina C shock</option>
+    </select>
+
+    <div class="grid">
+      <div>
+        <label>Precio (ARS)</label>
+        <input type="number" id="inputPrecio" step="0.01" min="0">
+      </div>
+      <div>
+        <label>Cantidad</label>
+        <input type="number" id="inputCantidad" value="1" step="1" min="1">
+      </div>
+      <div>
+        <label>Descuento %</label>
+        <input type="number" id="inputDescuento" value="0" step="0.01" min="0" max="100">
+      </div>
+    </div>
+
+    <button class="btn-add" onclick="agregarAlCarrito()" ontouchstart="">➕ Agregar al carrito</button>
+    <button class="btn-clear" onclick="vaciarCarrito()" ontouchstart="">🗑️ Vaciar carrito</button>
+    <button class="btn-download" onclick="descargarComprobante()" ontouchstart="">📄 Descargar comprobante</button>
+  </div>
+
+  <div class="card">
+    <h2>Carrito de compras</h2>
+    <div class="overflow">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="right">Precio</th>
+            <th class="right">Cant.</th>
+            <th class="right">Desc.%</th>
+            <th class="right">Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tablaBody">
+          <tr>
+            <td colspan="6" style="text-align:center;color:#6b7280">El carrito está vacío</td>
+          </tr>
+        </tbody>
+        <tfoot class="totals">
+          <tr>
+            <td colspan="4" class="right">SUBTOTAL</td>
+            <td class="right" id="celSubtotal">$ 0,00</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="right">DESCUENTO</td>
+            <td class="right" id="celDescuento">$ 0,00</td>
+            <td></td>
+          </tr>
+          <tr class="total-row">
+            <td colspan="4" class="right">TOTAL A COBRAR</td>
+            <td class="right" id="celTotal">$ 0,00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+var carrito = [];
+
+function formatoPrecio(num) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 2
+  }).format(num);
+}
+
+function cambiarProducto() {
+  var select = document.getElementById('selectProducto');
+  var valor = select.value;
+  var partes = valor.split('|');
+  var precio = partes[2];
+  document.getElementById('inputPrecio').value = precio;
+}
+
+function agregarAlCarrito() {
+  var select = document.getElementById('selectProducto');
+  var valor = select.value;
+  var partes = valor.split('|');
+  var nombre = partes[0];
+  var codigo = partes[1];
+  var precio = parseFloat(document.getElementById('inputPrecio').value) || 0;
+  var cantidad = parseInt(document.getElementById('inputCantidad').value) || 1;
+  var descuento = parseFloat(document.getElementById('inputDescuento').value) || 0;
+
+  if (precio <= 0) {
+    alert('Ingrese un precio válido');
+    return;
+  }
+
+  var subtotal = precio * cantidad;
+  var montoDesc = subtotal * (descuento / 100);
+  var total = subtotal - montoDesc;
+
+  carrito.push({
+    nombre: nombre,
+    codigo: codigo,
+    precio: precio,
+    cantidad: cantidad,
+    descuento: descuento,
+    subtotal: subtotal,
+    montoDesc: montoDesc,
+    total: total
+  });
+
+  document.getElementById('inputCantidad').value = '1';
+  document.getElementById('inputDescuento').value = '0';
+  
+  actualizarTabla();
+}
+
+function eliminarItem(idx) {
+  carrito.splice(idx, 1);
+  actualizarTabla();
+}
+
+function cambiarCantidad(idx, val) {
+  var cant = parseInt(val) || 1;
+  carrito[idx].cantidad = cant;
+  carrito[idx].subtotal = carrito[idx].precio * cant;
+  carrito[idx].montoDesc = carrito[idx].subtotal * (carrito[idx].descuento / 100);
+  carrito[idx].total = carrito[idx].subtotal - carrito[idx].montoDesc;
+  actualizarTabla();
+}
+
+function cambiarDescuento(idx, val) {
+  var desc = parseFloat(val) || 0;
+  if (desc > 100) desc = 100;
+  if (desc < 0) desc = 0;
+  carrito[idx].descuento = desc;
+  carrito[idx].montoDesc = carrito[idx].subtotal * (desc / 100);
+  carrito[idx].total = carrito[idx].subtotal - carrito[idx].montoDesc;
+  actualizarTabla();
+}
+
+function actualizarTabla() {
+  var tbody = document.getElementById('tablaBody');
+  
+  if (carrito.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280">El carrito está vacío</td></tr>';
+    document.getElementById('celSubtotal').textContent = '$ 0,00';
+    document.getElementById('celDescuento').textContent = '$ 0,00';
+    document.getElementById('celTotal').textContent = '$ 0,00';
+    return;
+  }
+
+  var html = '';
+  var sumaSubtotal = 0;
+  var sumaDescuento = 0;
+  var sumaTotal = 0;
+
+  for (var i = 0; i < carrito.length; i++) {
+    var item = carrito[i];
+    sumaSubtotal += item.subtotal;
+    sumaDescuento += item.montoDesc;
+    sumaTotal += item.total;
+
+    html += '<tr>';
+    html += '<td>' + item.nombre + '<div style="font-size:11px;color:#6b7280">Cod: ' + item.codigo + '</div></td>';
+    html += '<td class="right">' + formatoPrecio(item.precio) + '</td>';
+    html += '<td class="right"><input type="number" class="input-small" value="' + item.cantidad + '" min="1" onchange="cambiarCantidad(' + i + ', this.value)"></td>';
+    html += '<td class="right"><input type="number" class="input-small" value="' + item.descuento + '" min="0" max="100" step="0.01" onchange="cambiarDescuento(' + i + ', this.value)"></td>';
+    html += '<td class="right">' + formatoPrecio(item.total) + '</td>';
+    html += '<td><button class="btn-delete" onclick="eliminarItem(' + i + ')" ontouchstart="">×</button></td>';
+    html += '</tr>';
+  }
+
+  tbody.innerHTML = html;
+  document.getElementById('celSubtotal').textContent = formatoPrecio(sumaSubtotal);
+  document.getElementById('celDescuento').textContent = formatoPrecio(sumaDescuento);
+  document.getElementById('celTotal').textContent = formatoPrecio(sumaTotal);
+}
+
+function vaciarCarrito() {
+  if (carrito.length === 0) {
+    alert('El carrito ya está vacío');
+    return;
+  }
+  if (confirm('¿Está seguro de vaciar el carrito?')) {
+    carrito = [];
+    actualizarTabla();
+  }
+}
+
+function descargarComprobante() {
+  if (carrito.length === 0) {
+    alert('El carrito está vacío');
+    return;
+  }
+
+  var filas = '';
+  var sumaSubtotal = 0;
+  var sumaDescuento = 0;
+  var sumaTotal = 0;
+
+  for (var i = 0; i < carrito.length; i++) {
+    var item = carrito[i];
+    sumaSubtotal += item.subtotal;
+    sumaDescuento += item.montoDesc;
+    sumaTotal += item.total;
+
+    filas += '<tr>';
+    filas += '<td>' + (i + 1) + '</td>';
+    filas += '<td>' + item.nombre + '<br><small style="color:#888">Cod: ' + item.codigo + '</small></td>';
+    filas += '<td class="right">' + formatoPrecio(item.precio) + '</td>';
+    filas += '<td class="right">' + item.cantidad + '</td>';
+    filas += '<td class="right">' + (item.descuento > 0 ? item.descuento.toFixed(1) + '%' : '—') + '</td>';
+    filas += '<td class="right"><strong>' + formatoPrecio(item.total) + '</strong></td>';
+    filas += '</tr>';
+  }
+
+  var ahora = new Date();
+  var fecha = ahora.toLocaleDateString('es-AR', {day:'numeric', month:'long', year:'numeric'}) + ' ' + ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+
+  var htmlComprobante = '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comprobante DERVIESKINARE</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font:14px/1.6 -apple-system,system-ui,Arial;padding:20px;max-width:800px;margin:0 auto}h1{font-size:22px;margin-bottom:8px;color:#0f766e}.fecha{color:#666;font-size:13px;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin:15px 0}th,td{padding:10px 8px;border-bottom:1px solid #ddd;text-align:left}th{background:#f5f5f5;font-weight:600;font-size:12px;color:#666}.right{text-align:right}.totales{margin-top:20px;margin-left:auto;max-width:350px}.totales td{padding:8px;font-size:14px}.totales tr:last-child td{font-weight:700;font-size:17px;color:#0f766e;border-top:2px solid #0f766e;padding-top:12px}@media print{body{padding:10px}}</style></head><body><h1>DERVIESKINARE</h1><div class="fecha">' + fecha + '</div><table><thead><tr><th style="width:5%">#</th><th style="width:35%">Producto</th><th class="right" style="width:15%">Precio</th><th class="right" style="width:10%">Cant.</th><th class="right" style="width:12%">Desc.</th><th class="right" style="width:18%">Total</th></tr></thead><tbody>' + filas + '</tbody></table><div class="totales"><table><tr><td class="right">Subtotal:</td><td class="right">' + formatoPrecio(sumaSubtotal) + '</td></tr><tr><td class="right">Descuento:</td><td class="right">-' + formatoPrecio(sumaDescuento) + '</td></tr><tr><td class="right">TOTAL A COBRAR:</td><td class="right">' + formatoPrecio(sumaTotal) + '</td></tr></table></div><div style="margin-top:30px;padding-top:20px;border-top:1px solid #ddd;color:#888;font-size:12px;text-align:center">Comprobante generado el ' + new Date().toLocaleString('es-AR') + '</div></body></html>';
+
+  var blob = new Blob([htmlComprobante], {type: 'text/html'});
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  var nombreArchivo = 'comprobante-' + new Date().toISOString().slice(0,10) + '.html';
+  link.href = url;
+  link.download = nombreArchivo;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  setTimeout(function() {
+    alert('Comprobante descargado. Ábrelo desde tu carpeta de Descargas y guárdalo como PDF.');
+  }, 500);
+}
+
+cambiarProducto();
+</script>
+
+</body>
+</html>
