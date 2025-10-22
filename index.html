@@ -1,383 +1,355 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
-<title>Calculadora DERVIESKINARE</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculadora de Ventas – DERVIESKINARE</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif;
-  font-size:16px;
-  line-height:1.5;
-  color:#111827;
-  background:#fff;
-  padding:16px;
-}
-.container{max-width:900px;margin:0 auto}
-.card{
-  background:#f8fafc;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-  padding:16px;
-  margin-bottom:16px;
-}
-h1{font-size:20px;font-weight:700;margin-bottom:16px;color:#0f766e}
-h2{font-size:18px;font-weight:600;margin-bottom:12px}
-label{
-  display:block;
-  font-size:14px;
-  color:#6b7280;
-  margin-top:12px;
-  margin-bottom:6px;
-  font-weight:500;
-}
-input,select{
-  width:100%;
-  padding:12px;
-  border:1px solid #e5e7eb;
-  border-radius:8px;
-  background:#fff;
-  font-size:16px;
-  font-family:inherit;
-}
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  margin-bottom:12px;
-}
-button{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:8px;
-  font-size:15px;
-  font-weight:600;
-  cursor:pointer;
-  margin-bottom:8px;
-  font-family:inherit;
-  touch-action:manipulation;
-}
-.btn-add{background:#0f766e;color:#fff}
-.btn-clear{background:#ef4444;color:#fff}
-.btn-download{background:#fff;color:#111827;border:1px solid #e5e7eb}
-button:active{transform:scale(0.98);opacity:0.8}
-table{
-  width:100%;
-  border-collapse:collapse;
-  background:#fff;
-  font-size:14px;
-}
-th,td{
-  padding:10px 6px;
-  text-align:left;
-  border-bottom:1px solid #e5e7eb;
-}
-th{
-  background:#f1f5f9;
-  font-weight:600;
-  font-size:12px;
-  color:#6b7280;
-}
-.right{text-align:right}
-.input-small{
-  width:55px;
-  padding:6px;
-  font-size:14px;
-  border:1px solid #e5e7eb;
-  border-radius:4px;
-  text-align:center;
-}
-.btn-delete{
-  background:#ef4444;
-  color:#fff;
-  border:none;
-  padding:4px 10px;
-  border-radius:4px;
-  font-size:18px;
-  font-weight:bold;
-  cursor:pointer;
-}
-.totals td{font-weight:600}
-.total-row{font-size:16px;color:#0f766e}
-.overflow{overflow-x:auto;-webkit-overflow-scrolling:touch}
-@media (max-width:600px){
-  .grid{grid-template-columns:1fr}
-  body{padding:12px}
-  h1{font-size:18px}
-  table{font-size:13px}
-  th,td{padding:8px 4px}
-  .input-small{width:50px;font-size:13px}
-}
+  :root{
+    --bg:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --brand:#0f766e; --accent:#22c55e; --danger:#ef4444;
+    --heroA:#bfd5cc; --heroB:#e6f0ec;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial; color:var(--ink); background:var(--bg)}
+  header{padding:22px 18px 34px; border-bottom:1px solid var(--line); background:linear-gradient(180deg, var(--heroA), var(--heroB));}
+  .hero{max-width:1100px; margin:0 auto; padding:0 16px; text-align:center}
+  .brand{font-weight:900; letter-spacing:.5px; font-size:28px}
+  .sub{color:#2c584f; margin-top:4px}
+  .badge{display:inline-flex; gap:8px; align-items:center; background:#fff; border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:13px; margin-top:10px}
+  .wrap{max-width:1100px; margin:20px auto; padding:0 16px}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media (max-width:860px){ .grid{grid-template-columns:1fr} }
+  .card{background:#f8fafc; border:1px solid var(--line); border-radius:14px; padding:14px}
+  h2{margin:0 0 8px; font-size:20px}
+  label{display:block; font-size:14px; color:var(--muted); margin:8px 0 6px}
+  input[type="number"], input[type="text"], select{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font:inherit; background:#fff
+  }
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:#fff; cursor:pointer}
+  .btn.primary{background:var(--brand); color:#fff; border-color:transparent}
+  .btn.ghost{background:#fff}
+  .btn.danger{background:var(--danger); color:#fff; border-color:transparent}
+  .stack{display:flex; gap:8px; flex-wrap:wrap}
+  table{width:100%; border-collapse:collapse; margin-top:8px}
+  th, td{border-bottom:1px solid var(--line); padding:10px; text-align:left; font-size:14px}
+  th{background:#f1f5f9; color:#111827}
+  tfoot td{font-weight:700; font-size:16px}
+  .right{text-align:right}
+  .muted{color:var(--muted)}
+  .small{font-size:12px}
+  .invoice-head{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px; border:1px solid var(--line); border-radius:12px; background:linear-gradient(180deg,#fcfefd,#f3faf6)}
+  .invoice-meta{font-size:12px; color:var(--muted); text-align:right}
 </style>
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
+<header>
+  <div class="hero">
+    <div class="brand" data-brand></div>
+    <div class="sub">Catálogo de higiene, tratamientos e hidratación</div>
+    <div class="badge">🌿 Fórmulas naturales, sin conservantes</div>
+  </div>
+</header>
 
-<div class="container">
-  <h1>DERVIESKINARE · Calculadora</h1>
-
-  <div class="card">
+<div class="wrap grid">
+  <section class="card">
     <h2>Agregar producto</h2>
 
-    <label>Producto</label>
-    <select id="selectProducto" onchange="cambiarProducto()">
-      <option value="Agua micelar|89|15960">Agua micelar</option>
-      <option value="Caléndula|20|24360">Caléndula</option>
-      <option value="Células madres|25|28140">Células madres</option>
-      <option value="Despigmentante soft|5|26775">Despigmentante soft</option>
-      <option value="Emulsión de karité|76|24360">Emulsión de karité</option>
-      <option value="Espuma oil control|131|21735">Espuma oil control</option>
-      <option value="Espuma termal|132|21735">Espuma termal</option>
-      <option value="Hialcrem|86|25725">Hialcrem</option>
-      <option value="Loción termal|7|14805">Loción termal</option>
-      <option value="Rosa mosqueta|26|28140">Rosa mosqueta</option>
-      <option value="Sérum Niacinamida|103|29400">Sérum Niacinamida</option>
-      <option value="Sérum Vit. C|85|34650">Sérum Vit. C</option>
-      <option value="Shock Vit A (corporal)|75|19740">Shock Vit A (corporal)</option>
-      <option value="Ultra hidratante Urea|36|21735">Ultra hidratante Urea</option>
-      <option value="Vitamina C shock|24|28140">Vitamina C shock</option>
-    </select>
+    <label>Buscar producto</label>
+    <input id="search" type="search" inputmode="text" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" placeholder="Escribí para filtrar por nombre..." />
 
-    <div class="grid">
+    <label>Producto</label>
+    <select id="productSelect"></select>
+
+    <div class="row2">
       <div>
-        <label>Precio (ARS)</label>
-        <input type="number" id="inputPrecio" step="0.01" min="0">
+        <label>Precio unitario</label>
+        <input id="price" type="number" min="0" step="0.01" />
+        <div class="small muted">Podés editarlo antes de agregar.</div>
       </div>
       <div>
         <label>Cantidad</label>
-        <input type="number" id="inputCantidad" value="1" step="1" min="1">
+        <input id="qty" type="number" min="1" step="1" value="1"/>
       </div>
+    </div>
+
+    <div class="row2">
       <div>
-        <label>Descuento %</label>
-        <input type="number" id="inputDescuento" value="0" step="0.01" min="0" max="100">
+        <label>Descuento (%)</label>
+        <input id="discountPct" type="number" min="0" step="0.01" value="0" placeholder="0 = sin descuento"/>
+      </div>
+      <div style="display:flex; align-items:flex-end">
+        <button id="addBtn" class="btn primary" type="button" style="width:100%">+ Agregar al carrito</button>
       </div>
     </div>
 
-    <button class="btn-add" onclick="agregarAlCarrito()" ontouchstart="">➕ Agregar al carrito</button>
-    <button class="btn-clear" onclick="vaciarCarrito()" ontouchstart="">🗑️ Vaciar carrito</button>
-    <button class="btn-download" onclick="descargarComprobante()" ontouchstart="">📄 Descargar comprobante</button>
-  </div>
+    <div class="small muted">Atajos: Enter agrega al carrito. El descuento se aplica sobre <b>precio × cantidad</b>.</div>
+  </section>
 
-  <div class="card">
-    <h2>Carrito de compras</h2>
-    <div class="overflow">
-      <table>
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th class="right">Precio</th>
-            <th class="right">Cant.</th>
-            <th class="right">Desc.%</th>
-            <th class="right">Total</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="tablaBody">
-          <tr>
-            <td colspan="6" style="text-align:center;color:#6b7280">El carrito está vacío</td>
-          </tr>
-        </tbody>
-        <tfoot class="totals">
-          <tr>
-            <td colspan="4" class="right">SUBTOTAL</td>
-            <td class="right" id="celSubtotal">$ 0,00</td>
-            <td></td>
-          </tr>
-          <tr>
-            <td colspan="4" class="right">DESCUENTO</td>
-            <td class="right" id="celDescuento">$ 0,00</td>
-            <td></td>
-          </tr>
-          <tr class="total-row">
-            <td colspan="4" class="right">TOTAL A COBRAR</td>
-            <td class="right" id="celTotal">$ 0,00</td>
-            <td></td>
-          </tr>
-        </tfoot>
-      </table>
+  <section class="card">
+    <div class="invoice-head">
+      <div style="font-weight:800">Carrito</div>
+      <div class="invoice-meta">
+        <div><span data-brand></span></div>
+        <div id="nowMeta"></div>
+      </div>
     </div>
-  </div>
+
+    <div class="stack" style="margin-top:8px">
+      <button id="clearBtn" class="btn ghost" type="button">Vaciar</button>
+      <button id="downloadBtn" class="btn ghost" type="button">Descargar PDF</button>
+    </div>
+
+    <table id="cartTable">
+      <thead>
+        <tr>
+          <th style="width:32%">Producto</th>
+          <th class="right" style="width:12%">P. unit</th>
+          <th class="right" style="width:12%">Cant.</th>
+          <th class="right" style="width:12%">Desc. %</th>
+          <th class="right" style="width:14%">Subtotal</th>
+          <th class="right" style="width:14%">Total línea</th>
+          <th style="width:2%"></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="right">SUBTOTAL</td>
+          <td id="subtotalCell" class="right">$ 0,00</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td colspan="4" class="right">TOTAL DESCUENTO</td>
+          <td id="discountCell" class="right">$ 0,00</td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td colspan="4" class="right">TOTAL A COBRAR</td>
+          <td id="totalCell" class="right" style="font-size:18px">$ 0,00</td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </section>
 </div>
 
 <script>
-var carrito = [];
+// ===== Config =====
+const brandName = "DERVIESKINARE";
+const products = [
+  {code:89,  name:"Agua micelar",            price:15960},
+  {code:20,  name:"Calendula",               price:24360},
+  {code:25,  name:"celulas madres",          price:28140},
+  {code:5,   name:"Despigmentante soft",     price:26775},
+  {code:76,  name:"Emulsión de karite",      price:24360},
+  {code:131, name:"Espuma oil control",      price:21735},
+  {code:132, name:"Espuma Termal",           price:21735},
+  {code:86,  name:"Hialcrem",                price:25725},
+  {code:7,   name:"Loción termal",           price:14805},
+  {code:26,  name:"Rosa mosqueta",           price:28140},
+  {code:103, name:"Serum Niacinamida",       price:29400},
+  {code:85,  name:"Serum Vit C",             price:34650},
+  {code:75,  name:"Shock VIT A - corporal",  price:19740},
+  {code:36,  name:"Ultra hidratante Urea",   price:21735},
+  {code:24,  name:"Vitamina C shock",        price:28140},
+];
 
-function formatoPrecio(num) {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 2
-  }).format(num);
-}
+// ===== Utilidades =====
+const $ = s => document.querySelector(s);
+const nf = new Intl.NumberFormat("es-AR", {style:"currency", currency:"ARS"});
+const norm = s => (s ?? '').toString().toLowerCase()
+  .replace(/[áàäâã]/g,'a').replace(/[éèëê]/g,'e').replace(/[íìïî]/g,'i')
+  .replace(/[óòöôõ]/g,'o').replace(/[úùüû]/g,'u').replace(/ñ/g,'n').replace(/ç/g,'c')
+  .replace(/\s+/g,' ').trim();
 
-function cambiarProducto() {
-  var select = document.getElementById('selectProducto');
-  var valor = select.value;
-  var partes = valor.split('|');
-  var precio = partes[2];
-  document.getElementById('inputPrecio').value = precio;
-}
+const els = {
+  search: $("#search"), productSelect: $("#productSelect"), price: $("#price"), qty: $("#qty"),
+  discountPct: $("#discountPct"), addBtn: $("#addBtn"), clearBtn: $("#clearBtn"), downloadBtn: $("#downloadBtn"),
+  cartTableBody: document.querySelector("#cartTable tbody"), subtotalCell: $("#subtotalCell"),
+  discountCell: $("#discountCell"), totalCell: $("#totalCell"),
+};
+let cart = [];
 
-function agregarAlCarrito() {
-  var select = document.getElementById('selectProducto');
-  var valor = select.value;
-  var partes = valor.split('|');
-  var nombre = partes[0];
-  var codigo = partes[1];
-  var precio = parseFloat(document.getElementById('inputPrecio').value) || 0;
-  var cantidad = parseInt(document.getElementById('inputCantidad').value) || 1;
-  var descuento = parseFloat(document.getElementById('inputDescuento').value) || 0;
+// ===== Branding y meta =====
+for (const el of document.querySelectorAll('[data-brand]')) el.textContent = brandName;
+$("#nowMeta").textContent = new Intl.DateTimeFormat('es-AR',{dateStyle:'medium', timeStyle:'short'}).format(new Date());
 
-  if (precio <= 0) {
-    alert('Ingrese un precio válido');
-    return;
+// ===== Carga de productos en <select> (una sola vez; estable en móvil) =====
+function fillAllOptions(){
+  const select = els.productSelect;
+  select.innerHTML = "";
+  for (const p of products){
+    const opt = document.createElement("option");
+    opt.value = String(p.code);
+    opt.textContent = p.name;
+    select.appendChild(opt);
   }
+  if (products.length){
+    select.value = String(products[0].code);
+    els.price.value = products[0].price;
+  }
+}
 
-  var subtotal = precio * cantidad;
-  var montoDesc = subtotal * (descuento / 100);
-  var total = subtotal - montoDesc;
+// ===== Búsqueda: seleccionar primer match sin repoblar =====
+function selectFirstMatch(q){
+  const Q = norm(q||"");
+  const idx = products.findIndex(p => norm(p.name).includes(Q));
+  if (idx >= 0){
+    const m = products[idx];
+    els.productSelect.value = String(m.code);
+    els.price.value = m.price;
+  }
+}
 
-  carrito.push({
-    nombre: nombre,
-    codigo: codigo,
-    precio: precio,
-    cantidad: cantidad,
-    descuento: descuento,
-    subtotal: subtotal,
-    montoDesc: montoDesc,
-    total: total
+// ===== Listeners =====
+fillAllOptions();
+els.productSelect.addEventListener("change", () => {
+  const prod = products.find(p => String(p.code) === els.productSelect.value);
+  if (prod) els.price.value = prod.price;
+});
+["input","keyup","change"].forEach(evt => els.search.addEventListener(evt, e => selectFirstMatch(e.target.value || "")));
+
+function addToCart(){
+  const code = Number(els.productSelect.value);
+  const prod = products.find(p => p.code === code);
+  if (!prod) return;
+  const price = Math.max(0, Number(els.price.value || 0));
+  const qty   = Math.max(1, Math.floor(Number(els.qty.value || 1)));
+  const dPct  = Math.min(100, Math.max(0, Number(els.discountPct.value || 0)));
+  const subtotal = price * qty;
+  const discount = subtotal * (dPct/100);
+  const total = subtotal - discount;
+  cart.push({ code, name: prod.name, price, qty, dPct, subtotal, discount, total });
+  renderCart();
+  els.qty.value = 1; els.discountPct.value = 0;
+}
+els.addBtn.addEventListener("click", addToCart);
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && (document.activeElement === els.qty || document.activeElement === els.discountPct || document.activeElement === els.price)) addToCart();
+});
+
+function renderCart(){
+  cart = cart.map(it => {
+    const subtotal = it.price * it.qty;
+    const discount = subtotal * (Math.min(100, Math.max(0, it.dPct))/100);
+    const total = subtotal - discount;
+    return {...it, subtotal, discount, total};
   });
-
-  document.getElementById('inputCantidad').value = '1';
-  document.getElementById('inputDescuento').value = '0';
-  
-  actualizarTabla();
+  els.cartTableBody.innerHTML = cart.map((it, idx) => `
+    <tr>
+      <td><div>${it.name}</div><div class="muted small">Cod: ${it.code}</div></td>
+      <td class="right">${nf.format(it.price)}</td>
+      <td class="right"><input type="number" min="1" step="1" value="${it.qty}" style="width:80px" onchange="updateQty(${idx}, this.value)"></td>
+      <td class="right"><input type="number" min="0" step="0.01" value="${it.dPct}" style="width:80px" onchange="updatePct(${idx}, this.value)"></td>
+      <td class="right">${nf.format(it.subtotal)}</td>
+      <td class="right">${nf.format(it.total)}</td>
+      <td class="right"><button class="btn danger" onclick="removeItem(${idx})">×</button></td>
+    </tr>`).join("");
+  const subtotal = cart.reduce((a,b)=>a+b.subtotal,0);
+  const discount = cart.reduce((a,b)=>a+b.discount,0);
+  const total = cart.reduce((a,b)=>a+b.total,0);
+  els.subtotalCell.textContent = nf.format(subtotal);
+  els.discountCell.textContent = nf.format(discount);
+  els.totalCell.textContent = nf.format(total);
 }
 
-function eliminarItem(idx) {
-  carrito.splice(idx, 1);
-  actualizarTabla();
+window.updateQty = (idx, val) => { cart[idx].qty = Math.max(1, Math.floor(Number(val || 1))); renderCart(); };
+window.updatePct = (idx, val) => { cart[idx].dPct = Math.min(100, Math.max(0, Number(val || 0))); renderCart(); };
+window.removeItem = (idx) => { cart.splice(idx,1); renderCart(); };
+
+// ===== PDF =====
+function buildReceiptHTML(){
+  const date = new Date();
+  const f = new Intl.DateTimeFormat("es-AR", {dateStyle:"short", timeStyle:"short"}).format(date);
+  const nro = `DS-${date.getFullYear()}${String(date.getMonth()+1).padStart(2,'0')}${String(date.getDate()).padStart(2,'0')}-${String(date.getHours()).padStart(2,'0')}${String(date.getMinutes()).padStart(2,'0')}`;
+  const rows = cart.map((it, i) => `
+    <tr>
+      <td>${i+1}</td><td>${it.name}</td>
+      <td class="right">${nf.format(it.price)}</td>
+      <td class="right">${it.qty}</td>
+      <td class="right">${it.dPct ? (it.dPct + '%') : '—'}</td>
+      <td class="right">${nf.format(it.subtotal)}</td>
+      <td class="right">${nf.format(it.total)}</td>
+    </tr>`).join("");
+  const subtotal = cart.reduce((a,b)=>a+b.subtotal,0);
+  const discount = cart.reduce((a,b)=>a+b.discount,0);
+  const total = cart.reduce((a,b)=>a+b.total,0);
+  return `<!DOCTYPE html><html lang="es"><meta charset="utf-8"><title>Comprobante · ${brandName}</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  body{font:14px/1.5 -apple-system,system-ui,Segoe UI,Roboto,Inter,Arial;color:#0e1726}
+  .head{display:flex; justify-content:space-between; gap:16px; align-items:center}
+  .brandBox{display:flex; align-items:center; gap:12px}
+  .logo{width:42px; height:42px; border-radius:10px; background:linear-gradient(180deg,#c7e3d6,#eaf4ef); border:1px solid #e5e7eb}
+  .brand{font-weight:900; letter-spacing:.5px; font-size:22px}
+  .info{font-size:12px; color:#6b7280; text-align:right}
+  .paper{border:1px solid #e5e7eb; border-radius:14px; padding:18px}
+  h2{font-size:16px; margin:16px 0 6px}
+  table{width:100%; border-collapse:collapse; margin-top:8px}
+  th,td{border-bottom:1px solid #e5e7eb; padding:8px 10px; text-align:left}
+  th{background:#f8f8fb}
+  .right{text-align:right}
+  .grand{display:flex; justify-content:flex-end; margin-top:12px}
+  .grand .box{min-width:280px; border:1px solid #e5e7eb; border-radius:12px; padding:12px; background:linear-gradient(180deg,#fcfefd,#f3faf6)}
+  .foot{margin-top:16px; font-size:12px; color:#6b7280}
+</style>
+<div class="paper">
+  <div class="head">
+    <div class="brandBox"><div class="logo"></div><div><div class="brand">${brandName}</div><div style="font-size:12px; color:#2c584f">Comprobante / Resumen de compra</div></div></div>
+    <div class="info"><div><b>N°</b> ${nro}</div><div><b>Fecha</b> ${f}</div></div>
+  </div>
+  <h2>Detalle</h2>
+  <table><thead><tr><th>#</th><th>Producto</th><th class="right">P. unit</th><th class="right">Cant.</th><th class="right">Desc. %</th><th class="right">Subtotal</th><th class="right">Total línea</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="grand"><div class="box"><table style="width:100%; border-collapse:collapse">
+    <tr><td class="right" style="width:60%">SUBTOTAL</td><td class="right">${nf.format(subtotal)}</td></tr>
+    <tr><td class="right">TOTAL DESCUENTO</td><td class="right">${nf.format(discount)}</td></tr>
+    <tr><td class="right" style="font-size:18px">TOTAL A COBRAR</td><td class="right" style="font-size:18px">${nf.format(total)}</td></tr>
+  </table></div></div>
+  <div class="foot">Gracias por tu compra · ${brandName}. Este comprobante no es una factura.</div>
+</div>
+<script>window.onload=()=>window.print()<\/script>`;
 }
 
-function cambiarCantidad(idx, val) {
-  var cant = parseInt(val) || 1;
-  carrito[idx].cantidad = cant;
-  carrito[idx].subtotal = carrito[idx].precio * cant;
-  carrito[idx].montoDesc = carrito[idx].subtotal * (carrito[idx].descuento / 100);
-  carrito[idx].total = carrito[idx].subtotal - carrito[idx].montoDesc;
-  actualizarTabla();
-}
-
-function cambiarDescuento(idx, val) {
-  var desc = parseFloat(val) || 0;
-  if (desc > 100) desc = 100;
-  if (desc < 0) desc = 0;
-  carrito[idx].descuento = desc;
-  carrito[idx].montoDesc = carrito[idx].subtotal * (desc / 100);
-  carrito[idx].total = carrito[idx].subtotal - carrito[idx].montoDesc;
-  actualizarTabla();
-}
-
-function actualizarTabla() {
-  var tbody = document.getElementById('tablaBody');
-  
-  if (carrito.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#6b7280">El carrito está vacío</td></tr>';
-    document.getElementById('celSubtotal').textContent = '$ 0,00';
-    document.getElementById('celDescuento').textContent = '$ 0,00';
-    document.getElementById('celTotal').textContent = '$ 0,00';
-    return;
+async function downloadPDF(){
+  if (cart.length === 0){ alert("El carrito está vacío."); return; }
+  try {
+    if (!window.jspdf || !window.html2canvas) throw new Error("libs-no-listas");
+    const container = document.createElement('div');
+    container.id = 'receiptRoot';
+    container.style.cssText = 'position:fixed; left:-9999px; top:0; width:794px; background:#fff; padding:0; margin:0;';
+    container.innerHTML = buildReceiptHTML();
+    document.body.appendChild(container);
+    const canvas = await html2canvas(container, {scale: 2, backgroundColor:'#ffffff', useCORS:true});
+    document.body.removeChild(container);
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf; const pdf = new jsPDF('p', 'pt', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth(); const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth; const imgHeight = canvas.height * (imgWidth / canvas.width);
+    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    let heightLeft = imgHeight - pageHeight; let position = -pageHeight;
+    while (heightLeft > 0) { pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight); heightLeft -= pageHeight; position -= pageHeight; }
+    const fname = `Comprobante - ${brandName} - ${new Date().toISOString().slice(0,10)}.pdf`;
+    pdf.save(fname);
+  } catch (err) {
+    const w = window.open('', '_blank'); w.document.open(); w.document.write(buildReceiptHTML()); w.document.close();
   }
-
-  var html = '';
-  var sumaSubtotal = 0;
-  var sumaDescuento = 0;
-  var sumaTotal = 0;
-
-  for (var i = 0; i < carrito.length; i++) {
-    var item = carrito[i];
-    sumaSubtotal += item.subtotal;
-    sumaDescuento += item.montoDesc;
-    sumaTotal += item.total;
-
-    html += '<tr>';
-    html += '<td>' + item.nombre + '<div style="font-size:11px;color:#6b7280">Cod: ' + item.codigo + '</div></td>';
-    html += '<td class="right">' + formatoPrecio(item.precio) + '</td>';
-    html += '<td class="right"><input type="number" class="input-small" value="' + item.cantidad + '" min="1" onchange="cambiarCantidad(' + i + ', this.value)"></td>';
-    html += '<td class="right"><input type="number" class="input-small" value="' + item.descuento + '" min="0" max="100" step="0.01" onchange="cambiarDescuento(' + i + ', this.value)"></td>';
-    html += '<td class="right">' + formatoPrecio(item.total) + '</td>';
-    html += '<td><button class="btn-delete" onclick="eliminarItem(' + i + ')" ontouchstart="">×</button></td>';
-    html += '</tr>';
-  }
-
-  tbody.innerHTML = html;
-  document.getElementById('celSubtotal').textContent = formatoPrecio(sumaSubtotal);
-  document.getElementById('celDescuento').textContent = formatoPrecio(sumaDescuento);
-  document.getElementById('celTotal').textContent = formatoPrecio(sumaTotal);
 }
 
-function vaciarCarrito() {
-  if (carrito.length === 0) {
-    alert('El carrito ya está vacío');
-    return;
-  }
-  if (confirm('¿Está seguro de vaciar el carrito?')) {
-    carrito = [];
-    actualizarTabla();
-  }
-}
+els.downloadBtn.addEventListener('click', downloadPDF);
+$("#clearBtn").addEventListener('click', ()=>{ cart = []; renderCart(); });
+renderCart();
 
-function descargarComprobante() {
-  if (carrito.length === 0) {
-    alert('El carrito está vacío');
-    return;
-  }
-
-  var filas = '';
-  var sumaSubtotal = 0;
-  var sumaDescuento = 0;
-  var sumaTotal = 0;
-
-  for (var i = 0; i < carrito.length; i++) {
-    var item = carrito[i];
-    sumaSubtotal += item.subtotal;
-    sumaDescuento += item.montoDesc;
-    sumaTotal += item.total;
-
-    filas += '<tr>';
-    filas += '<td>' + (i + 1) + '</td>';
-    filas += '<td>' + item.nombre + '<br><small style="color:#888">Cod: ' + item.codigo + '</small></td>';
-    filas += '<td class="right">' + formatoPrecio(item.precio) + '</td>';
-    filas += '<td class="right">' + item.cantidad + '</td>';
-    filas += '<td class="right">' + (item.descuento > 0 ? item.descuento.toFixed(1) + '%' : '—') + '</td>';
-    filas += '<td class="right"><strong>' + formatoPrecio(item.total) + '</strong></td>';
-    filas += '</tr>';
-  }
-
-  var ahora = new Date();
-  var fecha = ahora.toLocaleDateString('es-AR', {day:'numeric', month:'long', year:'numeric'}) + ' ' + ahora.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
-
-  var htmlComprobante = '<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Comprobante DERVIESKINARE</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font:14px/1.6 -apple-system,system-ui,Arial;padding:20px;max-width:800px;margin:0 auto}h1{font-size:22px;margin-bottom:8px;color:#0f766e}.fecha{color:#666;font-size:13px;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin:15px 0}th,td{padding:10px 8px;border-bottom:1px solid #ddd;text-align:left}th{background:#f5f5f5;font-weight:600;font-size:12px;color:#666}.right{text-align:right}.totales{margin-top:20px;margin-left:auto;max-width:350px}.totales td{padding:8px;font-size:14px}.totales tr:last-child td{font-weight:700;font-size:17px;color:#0f766e;border-top:2px solid #0f766e;padding-top:12px}@media print{body{padding:10px}}</style></head><body><h1>DERVIESKINARE</h1><div class="fecha">' + fecha + '</div><table><thead><tr><th style="width:5%">#</th><th style="width:35%">Producto</th><th class="right" style="width:15%">Precio</th><th class="right" style="width:10%">Cant.</th><th class="right" style="width:12%">Desc.</th><th class="right" style="width:18%">Total</th></tr></thead><tbody>' + filas + '</tbody></table><div class="totales"><table><tr><td class="right">Subtotal:</td><td class="right">' + formatoPrecio(sumaSubtotal) + '</td></tr><tr><td class="right">Descuento:</td><td class="right">-' + formatoPrecio(sumaDescuento) + '</td></tr><tr><td class="right">TOTAL A COBRAR:</td><td class="right">' + formatoPrecio(sumaTotal) + '</td></tr></table></div><div style="margin-top:30px;padding-top:20px;border-top:1px solid #ddd;color:#888;font-size:12px;text-align:center">Comprobante generado el ' + new Date().toLocaleString('es-AR') + '</div></body></html>';
-
-  var blob = new Blob([htmlComprobante], {type: 'text/html'});
-  var url = URL.createObjectURL(blob);
-  var link = document.createElement('a');
-  var nombreArchivo = 'comprobante-' + new Date().toISOString().slice(0,10) + '.html';
-  link.href = url;
-  link.download = nombreArchivo;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-
-  setTimeout(function() {
-    alert('Comprobante descargado. Ábrelo desde tu carpeta de Descargas y guárdalo como PDF.');
-  }, 500);
-}
-
-cambiarProducto();
+// ====== Tests mínimos (no cambian UI) ======
+(function tests(){
+  console.assert(norm('Células madres') === 'celulas madres', 'Normalizador falla');
+  console.assert(products.length === els.productSelect.options.length, 'Select no cargó todos los productos');
+})();
 </script>
-
 </body>
 </html>
