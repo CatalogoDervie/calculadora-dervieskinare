@@ -27,7 +27,7 @@ export function ref(name, id) {
   return doc(db, name, id);
 }
 
-export async function listDocs(name, orderField = "createdAt", direction = "desc", max = 700) {
+export async function listDocs(name, orderField = "createdAt", direction = "desc", max = 900) {
   try {
     const snap = await getDocs(query(col(name), orderBy(orderField, direction), limit(max)));
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -50,6 +50,14 @@ export function round(v) {
   return Math.round((n(v) + Number.EPSILON) * 100) / 100;
 }
 
+export function purchaseDiscountRate(quantity) {
+  const q = n(quantity);
+  if (q >= 20) return 0.20;
+  if (q >= 15) return 0.15;
+  if (q >= 10) return 0.10;
+  return 0;
+}
+
 export async function loadAll() {
   const [products, patients, purchases, sales, payments, stockMovements] = await Promise.all([
     listDocs("products", "name", "asc"),
@@ -65,6 +73,7 @@ export async function loadAll() {
 
 export async function saveProduct(product) {
   const id = product.id || product.code || makeId("PROD");
+  const priceCompra = n(product.purchasePrice || product.resalePrice);
   const payload = {
     code: String(product.code || "").trim(),
     name: String(product.name || "").trim(),
@@ -72,8 +81,8 @@ export async function saveProduct(product) {
     category: String(product.category || "").trim(),
     stock: n(product.stock),
     minStock: n(product.minStock || 3),
-    purchasePrice: n(product.purchasePrice),
-    resalePrice: n(product.resalePrice),
+    purchasePrice: priceCompra,
+    resalePrice: priceCompra,
     suggestedSalePrice: n(product.suggestedSalePrice),
     active: product.active !== false,
     updatedAt: serverTimestamp()
@@ -81,6 +90,45 @@ export async function saveProduct(product) {
   if (!payload.name) throw new Error("El producto necesita nombre.");
   await setDoc(ref("products", id), { ...payload, createdAt: product.id ? product.createdAt || serverTimestamp() : serverTimestamp() }, { merge: true });
   return id;
+}
+
+export async function importProductsFromRows(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) throw new Error("No hay productos válidos para importar.");
+  let inserted = 0, updated = 0, skipped = 0;
+
+  for (const raw of rows) {
+    const code = String(raw.code || "").trim();
+    const name = String(raw.name || "").trim();
+    if (!code || !name) { skipped++; continue; }
+
+    const productRef = ref("products", code);
+    const current = await getDoc(productRef);
+    const previous = current.exists() ? current.data() : {};
+    const existingStock = current.exists() ? n(previous.stock) : 0;
+    const existingMinStock = current.exists() ? n(previous.minStock || 3) : n(raw.minStock || 3);
+
+    const priceCompra = n(raw.purchasePrice || raw.resalePrice);
+    const suggestedSalePrice = n(raw.suggestedSalePrice);
+    if (priceCompra <= 0 || suggestedSalePrice <= 0) { skipped++; continue; }
+
+    await setDoc(productRef, {
+      code,
+      name,
+      brand: String(raw.brand || previous.brand || "DERVIE").trim(),
+      category: String(raw.category || previous.category || "").trim(),
+      purchasePrice: priceCompra,
+      resalePrice: priceCompra,
+      suggestedSalePrice,
+      stock: existingStock,
+      minStock: existingMinStock,
+      active: true,
+      updatedAt: serverTimestamp(),
+      createdAt: previous.createdAt || serverTimestamp()
+    }, { merge: true });
+
+    current.exists() ? updated++ : inserted++;
+  }
+  return { inserted, updated, skipped, total: rows.length, created: inserted };
 }
 
 export async function deactivateProduct(id) {
@@ -121,14 +169,6 @@ export async function deactivatePatient(id) {
   await updateDoc(ref("patients", id), { active: false, updatedAt: serverTimestamp() });
 }
 
-export function purchaseDiscountRate(quantity) {
-  const q = n(quantity);
-  if (q >= 20) return 0.20;
-  if (q >= 15) return 0.15;
-  if (q >= 10) return 0.10;
-  return 0;
-}
-
 export async function createPurchase(data) {
   const productId = data.productId;
   const quantity = n(data.quantity);
@@ -142,11 +182,13 @@ export async function createPurchase(data) {
     if (!productSnap.exists()) throw new Error("Producto inexistente.");
 
     const product = productSnap.data();
-    const unitPrice = n(data.unitPrice) || n(product.resalePrice);
+    const unitPrice = n(data.unitPrice) || n(product.purchasePrice || product.resalePrice);
     const subtotal = round(unitPrice * quantity);
     const discountRate = purchaseDiscountRate(quantity);
     const discountAmount = round(subtotal * discountRate);
     const total = round(subtotal - discountAmount);
+    const suggestedSaleTotal = round(n(product.suggestedSalePrice) * quantity);
+    const estimatedProfit = round(suggestedSaleTotal - total);
     const newStock = n(product.stock) + quantity;
 
     tx.update(productRef, { stock: newStock, updatedAt: serverTimestamp() });
@@ -160,6 +202,8 @@ export async function createPurchase(data) {
       discountRate,
       discountAmount,
       total,
+      suggestedSaleTotal,
+      estimatedProfit,
       date: data.date || new Date().toISOString().slice(0, 10),
       notes: String(data.notes || ""),
       createdAt: serverTimestamp()
@@ -177,6 +221,68 @@ export async function createPurchase(data) {
   });
 
   return id;
+}
+
+export async function createPurchaseBatch(items, notes = "") {
+  if (!items || !items.length) throw new Error("Agregá productos a la compra.");
+  const batchId = makeId("SIMCOMPRA");
+
+  await runTransaction(db, async tx => {
+    const reads = [];
+    for (const item of items) {
+      const productRef = ref("products", item.productId);
+      const productSnap = await tx.get(productRef);
+      if (!productSnap.exists()) throw new Error("Producto inexistente.");
+      reads.push({ productRef, productSnap, item });
+    }
+
+    for (const { productRef, productSnap, item } of reads) {
+      const p = productSnap.data();
+      const quantity = n(item.quantity);
+      if (quantity <= 0) throw new Error("Cantidad inválida.");
+      const unitPrice = n(item.unitPrice) || n(p.purchasePrice || p.resalePrice);
+      const subtotal = round(unitPrice * quantity);
+      const discountRate = purchaseDiscountRate(quantity);
+      const discountAmount = round(subtotal * discountRate);
+      const total = round(subtotal - discountAmount);
+      const suggestedSaleTotal = round(n(p.suggestedSalePrice) * quantity);
+      const estimatedProfit = round(suggestedSaleTotal - total);
+      const newStock = n(p.stock) + quantity;
+      const purchaseId = makeId("COMPRA");
+
+      tx.update(productRef, { stock: newStock, updatedAt: serverTimestamp() });
+      tx.set(ref("purchases", purchaseId), {
+        id: purchaseId,
+        batchId,
+        productId: item.productId,
+        productName: p.name,
+        quantity,
+        unitPrice,
+        subtotal,
+        discountRate,
+        discountAmount,
+        total,
+        suggestedSaleTotal,
+        estimatedProfit,
+        date: new Date().toISOString().slice(0,10),
+        notes,
+        createdAt: serverTimestamp()
+      });
+      tx.set(ref("stockMovements", makeId("MOV")), {
+        type: "COMPRA",
+        batchId,
+        productId: item.productId,
+        productName: p.name,
+        quantity,
+        resultingStock: newStock,
+        referenceId: purchaseId,
+        date: new Date().toISOString(),
+        createdAt: serverTimestamp()
+      });
+    }
+  });
+
+  return batchId;
 }
 
 export async function createSale(data) {
@@ -231,7 +337,6 @@ export async function createSale(data) {
     for (const { productRef, productSnap, item } of productSnaps) {
       const p = productSnap.data();
       const newStock = n(p.stock) - n(item.quantity);
-
       tx.update(productRef, { stock: newStock, updatedAt: serverTimestamp() });
       tx.set(ref("stockMovements", makeId("MOV")), {
         type: "VENTA",
@@ -330,66 +435,3 @@ export async function cancelSale(saleId) {
     tx.update(saleRef, { canceled: true, status: "ANULADA", balance: 0, updatedAt: serverTimestamp() });
   });
 }
-
-
-
-export async function importProductsFromRows(rows) {
-  if (!Array.isArray(rows) || rows.length === 0) {
-    throw new Error("No hay productos válidos para importar.");
-  }
-
-  let inserted = 0;
-  let updated = 0;
-  let skipped = 0;
-
-  for (const raw of rows) {
-    const code = String(raw.code || "").trim();
-    const name = String(raw.name || "").trim();
-
-    if (!code || !name) {
-      skipped++;
-      continue;
-    }
-
-    const id = code;
-    const productRef = ref("products", id);
-    const current = await getDoc(productRef);
-
-    const previous = current.exists() ? current.data() : {};
-    const existingStock = current.exists() ? n(previous.stock) : 0;
-    const existingMinStock = current.exists() ? n(previous.minStock || 3) : n(raw.minStock || 3);
-
-    const priceReventa = n(raw.resalePrice || raw.purchasePrice);
-    const suggestedSalePrice = n(raw.suggestedSalePrice);
-
-    if (priceReventa <= 0 || suggestedSalePrice <= 0) {
-      skipped++;
-      continue;
-    }
-
-    await setDoc(productRef, {
-      code,
-      name,
-      brand: String(raw.brand || previous.brand || "DERVIE").trim(),
-      category: String(raw.category || previous.category || "").trim(),
-      // En esta app, el costo para la médica es el precio de reventa del Excel.
-      purchasePrice: priceReventa,
-      resalePrice: priceReventa,
-      suggestedSalePrice,
-      stock: existingStock,
-      minStock: existingMinStock,
-      active: true,
-      updatedAt: serverTimestamp(),
-      createdAt: previous.createdAt || serverTimestamp()
-    }, { merge: true });
-
-    if (current.exists()) updated++;
-    else inserted++;
-  }
-
-  return { inserted, updated, skipped, total: rows.length };
-}
-
-
-
-
