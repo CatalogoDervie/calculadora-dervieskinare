@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dervie SkinCare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div><p class="eyebrow">Dervie SkinCare</p><h1 id="clinicName">Control de cremas</h1><p class="muted">Ventas, compras, pacientes, deudores y stock.</p></div>
+      <div id="status" class="status warn">Sin conectar</div>
+    </header>
+    <nav class="menu">
+      <button class="active" data-view="venta">Venta</button><button data-view="compra">Compra stock</button><button data-view="pacientes">Pacientes</button><button data-view="deudores">Deudores</button><button data-view="resumen">Resumen</button><button data-view="config">Config.</button>
+    </nav>
+    <main>
+      <section id="venta" class="view active">
+        <h2>Nueva venta</h2>
+        <div class="card">
+          <label>Paciente</label><div class="inline"><select id="vPaciente"></select><button class="light" data-go="pacientes">Nuevo</button></div>
+          <label>Buscar producto</label><input id="vBuscar" placeholder="Código o producto">
+          <label>Producto</label><select id="vProducto"></select>
+          <div class="grid3"><div><label>Cantidad</label><input id="vCant" type="number" min="1" value="1"></div><div><label>Precio venta</label><input id="vPrecio" type="number" placeholder="Automático"></div><div class="end"><button id="addVenta" class="primary">Agregar</button></div></div>
+        </div>
+        <div class="card">
+          <h3>Detalle</h3><div class="table"><table><thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Total</th><th></th></tr></thead><tbody id="vDetalle"></tbody></table></div>
+          <div class="grid3"><div><label>Descuento venta (%)</label><input id="vDesc" type="number" min="0" value="0"></div><div><label>Pagó ahora</label><input id="vPago" type="number" min="0" value="0"></div><div><label>Forma de pago</label><select id="vForma"><option>Efectivo</option><option>Transferencia</option><option>Débito</option><option>Crédito</option><option>Mixto</option><option>Pendiente</option></select></div></div>
+          <label>Observaciones</label><textarea id="vObs" rows="2"></textarea>
+          <div class="totals"><div><span>Subtotal</span><b id="vSub">$0</b></div><div><span>Descuento</span><b id="vDescMonto">$0</b></div><div><span>Total</span><b id="vTotal">$0</b></div><div><span>Saldo</span><b id="vSaldo">$0</b></div></div>
+          <button id="saveVenta" class="primary wide">Guardar venta</button>
+        </div>
+      </section>
+      <section id="compra" class="view">
+        <div class="head"><h2>Compra / ingreso de stock</h2><button id="importCatalogo" class="light">Importar catálogo</button></div>
+        <div class="card"><p class="hint">Precio compra = lo que la médica paga. Descuento: 10 unidades = 10%, 15 unidades = 20%.</p>
+          <label>Buscar producto</label><input id="cBuscar" placeholder="Código o producto"><label>Producto</label><select id="cProducto"></select>
+          <div class="grid3"><div><label>Cantidad</label><input id="cCant" type="number" min="1" value="1"></div><div><label>Precio compra</label><input id="cPrecio" type="number" placeholder="Automático"></div><div><label>Total estimado</label><input id="cTotal" disabled></div></div>
+          <label>Observaciones</label><textarea id="cObs" rows="2"></textarea><button id="saveCompra" class="primary wide">Guardar compra y sumar stock</button>
+        </div>
+        <div class="card"><h3>Stock actual</h3><div class="table"><table><thead><tr><th>Código</th><th>Producto</th><th>Precio compra</th><th>Venta sugerida</th><th>Stock</th></tr></thead><tbody id="stockRows"></tbody></table></div></div>
+      </section>
+      <section id="pacientes" class="view">
+        <h2>Pacientes</h2><div class="card"><label>Paciente</label><input id="pNombre" placeholder="Apellido y nombre"><label>Teléfono</label><input id="pTel"><label>Observaciones</label><textarea id="pObs" rows="2"></textarea><button id="savePaciente" class="primary wide">Guardar paciente</button></div>
+        <div class="card"><input id="pBuscar" placeholder="Buscar paciente"><div class="table"><table><thead><tr><th>Paciente</th><th>Teléfono</th><th>Obs.</th></tr></thead><tbody id="pacRows"></tbody></table></div></div>
+      </section>
+      <section id="deudores" class="view"><h2>Deudores</h2><div class="card"><div class="table"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Total</th><th>Pagado</th><th>Saldo</th><th>Estado</th><th></th></tr></thead><tbody id="deudRows"></tbody></table></div></div></section>
+      <section id="resumen" class="view"><div class="head"><h2>Resumen</h2><button id="reload" class="light">Actualizar</button></div><div class="kpis"><div><span>Ventas</span><b id="kVentas">$0</b></div><div><span>Cobrado</span><b id="kCobrado">$0</b></div><div><span>Deuda</span><b id="kDeuda">$0</b></div><div><span>Stock valorizado</span><b id="kStock">$0</b></div></div></section>
+      <section id="config" class="view"><h2>Configuración</h2><div class="card"><p class="hint">Para probar, pegá acá la URL de Apps Script que termina en /exec. Para dejarla fija, pegala en config.js.</p><label>URL Apps Script</label><input id="apiUrl"><button id="saveApi" class="primary wide">Guardar conexión local</button><button id="testApi" class="light wide">Probar conexión</button></div></section>
+    </main>
+  </div>
+  <dialog id="payDialog"><form method="dialog"><h3>Registrar pago</h3><p id="payInfo" class="muted"></p><input type="hidden" id="payVenta"><label>Importe</label><input id="payImporte" type="number"><label>Forma de pago</label><select id="payForma"><option>Efectivo</option><option>Transferencia</option><option>Débito</option><option>Crédito</option></select><label>Obs.</label><textarea id="payObs" rows="2"></textarea><div class="dialogActions"><button class="light" value="cancel">Cancelar</button><button id="confirmPay" class="primary">Guardar</button></div></form></dialog>
+  <div id="toast" class="toast"></div>
+  <script src="config.js"></script><script src="script.js"></script>
+</body>
+</html>
