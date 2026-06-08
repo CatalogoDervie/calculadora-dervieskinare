@@ -1,4 +1,3 @@
-
 :root{
   --bg:#f7f5f2;--card:#fff;--card2:#fbfaf8;--text:#27221e;--muted:#72685f;
   --line:#e3dad2;--soft:#f0ebe6;--brand:#7b5b46;--brand2:#a88469;
@@ -24,7 +23,7 @@ a{text-decoration:none;color:inherit}
 .side-foot{position:absolute;left:22px;right:22px;bottom:22px;display:grid;gap:10px}
 .userbox{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px;box-shadow:var(--shadow);font-size:13px}
 .userbox strong{display:block}.userbox span{color:var(--muted);word-break:break-word}
-.main{padding:26px;max-width:1360px;width:100%}
+.main{padding:26px;max-width:1420px;width:100%}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:22px}
 .eyebrow{margin:0 0 6px;color:var(--brand);font-size:12px;text-transform:uppercase;letter-spacing:.13em;font-weight:900}
 h1{font-size:clamp(30px,4vw,48px);margin:0 0 6px;letter-spacing:-.045em}
@@ -51,7 +50,9 @@ tr:last-child td{border-bottom:0}.help{font-size:12px;color:var(--muted);margin-
 .ok{background:rgba(47,125,85,.13);color:var(--ok)}.warn{background:rgba(183,121,31,.15);color:var(--warn)}.bad{background:rgba(179,77,77,.15);color:var(--bad)}.blue{background:rgba(52,109,166,.14);color:var(--blue)}
 .totals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px}
 .total{background:var(--card2);border:1px solid var(--line);border-radius:15px;padding:12px}.total span{font-size:12px;color:var(--muted);font-weight:900}.total strong{display:block;font-size:20px;margin-top:4px}
-dialog{border:0;border-radius:22px;padding:0;width:min(760px,calc(100vw - 26px));background:var(--card);color:var(--text);box-shadow:0 28px 80px rgba(0,0,0,.28)}
+.alert-list{display:grid;gap:10px}.alert{display:flex;justify-content:space-between;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--card2)}
+.alert strong{display:block}.chart{min-height:260px}.bar{height:12px;background:var(--soft);border-radius:999px;overflow:hidden}.bar span{display:block;height:100%;background:var(--brand);border-radius:999px}
+dialog{border:0;border-radius:22px;padding:0;width:min(850px,calc(100vw - 26px));background:var(--card);color:var(--text);box-shadow:0 28px 80px rgba(0,0,0,.28)}
 dialog::backdrop{background:rgba(0,0,0,.34);backdrop-filter:blur(3px)}
 .modal{padding:20px}.modal-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
 .toast{position:fixed;right:20px;bottom:20px;z-index:50;background:var(--text);color:var(--bg);padding:13px 15px;border-radius:16px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);transition:.18s;pointer-events:none;max-width:min(460px,calc(100vw - 28px))}
@@ -63,4 +64,4 @@ dialog::backdrop{background:rgba(0,0,0,.34);backdrop-filter:blur(3px)}
 .mobile{display:none;position:sticky;top:0;z-index:25;background:rgba(255,255,255,.82);border-bottom:1px solid var(--line);backdrop-filter:blur(16px);padding:12px 14px;justify-content:space-between;align-items:center}
 [data-theme="dark"] .mobile{background:rgba(33,29,25,.82)}
 .mobile img{width:145px}.menubtn{border:1px solid var(--line);background:var(--card);border-radius:12px;width:42px;height:42px;font-weight:900}
-@media(max-width:980px){.app{display:block}.mobile{display:flex}.side{position:fixed;inset:0 auto 0 0;z-index:35;width:290px;transform:translateX(-105%);transition:.2s}.menu-open .side{transform:translateX(0)}.side-foot{position:static;margin-top:18px}.main{padding:18px 14px}.top{flex-direction:column}.grid,.cols2,.cols3,.cols4,.split,.formgrid,.form2,.form3,.form4,.totals{grid-template-columns:1fr}.actions{width:100%}.actions .btn{flex:1}}
+@media(max-width:980px){.app{display:block}.mobile{display:flex}.side{position:fixed;inset:0 auto 0 0;z-index:35;width:290px;transform:translateX(-105%);transition:.2s}.menu-open .side{transform:translateX(0)}.side-foot{position:static;margin-top:18px}.main{padding:18px 14px}.top{flex-direction:column}.grid,.cols2,.cols3,.cols4,.split,.formgrid,.form2,.form3,.form4,.totals{grid-template-columns:1fr}.actions{width:100%}.actions .btn{flex:1}table{min-width:760px}}
