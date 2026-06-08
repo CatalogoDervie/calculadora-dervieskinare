@@ -1,12 +1,13 @@
 import { appConfig } from "./firebase-config.js";
 
 const nav = [
-  ["index.html","Dashboard","📊","dashboard"],
-  ["productos.html","Productos","🧴","productos"],
-  ["ventas.html","Ventas","🧾","ventas"],
+  ["index.html","Ventas","🧾","ventas"],
   ["pacientes.html","Pacientes","👤","pacientes"],
+  ["simulador.html","Simulador","🧮","simulador"],
   ["compras.html","Compras","📦","compras"],
-  ["pagos.html","Pagos","💳","pagos"],
+  ["productos.html","Productos","🧴","productos"],
+  ["pagos.html","Deudores / Pagos","💳","pagos"],
+  ["dashboard.html","Dashboard","📊","dashboard"],
   ["reportes.html","Reportes","📈","reportes"]
 ];
 
