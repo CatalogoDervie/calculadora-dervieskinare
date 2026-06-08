@@ -316,3 +316,64 @@ export async function cancelSale(saleId) {
     tx.update(saleRef, { canceled: true, status: "ANULADA", balance: 0, updatedAt: serverTimestamp() });
   });
 }
+
+
+
+export async function importProductsFromRows(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    throw new Error("No hay productos válidos para importar.");
+  }
+
+  let inserted = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const raw of rows) {
+    const code = String(raw.code || "").trim();
+    const name = String(raw.name || "").trim();
+
+    if (!code || !name) {
+      skipped++;
+      continue;
+    }
+
+    const id = code;
+    const productRef = ref("products", id);
+    const current = await getDoc(productRef);
+
+    const previous = current.exists() ? current.data() : {};
+    const existingStock = current.exists() ? n(previous.stock) : 0;
+    const existingMinStock = current.exists() ? n(previous.minStock || 3) : n(raw.minStock || 3);
+
+    const priceReventa = n(raw.resalePrice || raw.purchasePrice);
+    const suggestedSalePrice = n(raw.suggestedSalePrice);
+
+    if (priceReventa <= 0 || suggestedSalePrice <= 0) {
+      skipped++;
+      continue;
+    }
+
+    await setDoc(productRef, {
+      code,
+      name,
+      brand: String(raw.brand || previous.brand || "DERVIE").trim(),
+      category: String(raw.category || previous.category || "").trim(),
+      // En esta app, el costo para la médica es el precio de reventa del Excel.
+      purchasePrice: priceReventa,
+      resalePrice: priceReventa,
+      suggestedSalePrice,
+      stock: existingStock,
+      minStock: existingMinStock,
+      active: true,
+      updatedAt: serverTimestamp(),
+      createdAt: previous.createdAt || serverTimestamp()
+    }, { merge: true });
+
+    if (current.exists()) updated++;
+    else inserted++;
+  }
+
+  return { inserted, updated, skipped, total: rows.length };
+}
+
+
