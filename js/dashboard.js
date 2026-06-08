@@ -1,26 +1,35 @@
 import { initAnonymousAuth, loadAll } from "./firebase-service.js";
-import * as FS from "./firebase-service.js";
 import { mountLayout } from "./layout.js";
-import { $, money, num, round, esc, norm, badge, toast, setLoading, openModal, closeModal, csv, today } from "./ui.js";
+import { $, money, num, esc, badge, setLoading, daysBetween, lineChart } from "./ui.js";
 const user = await initAnonymousAuth();
 
 const content = `
 <div class="grid cols4">
-  <article class="card kpi"><span>Stock valorizado</span><strong id="kStock">$0</strong><small>reventa x stock</small></article>
-  <article class="card kpi"><span>Productos sin stock</span><strong id="kNoStock">0</strong><small>stock igual a cero</small></article>
-  <article class="card kpi"><span>Ventas del mes</span><strong id="kSales">$0</strong><small>total vendido</small></article>
-  <article class="card kpi"><span>Deuda pendiente</span><strong id="kDebt">$0</strong><small>saldo de ventas</small></article>
+  <article class="card kpi"><span>Ventas del mes</span><strong id="kSales">$0</strong><small>Total vendido</small></article>
+  <article class="card kpi"><span>Ganancia estimada</span><strong id="kProfit">$0</strong><small>Venta menos precio compra</small></article>
+  <article class="card kpi"><span>Deuda pendiente</span><strong id="kDebt">$0</strong><small>Saldo por cobrar</small></article>
+  <article class="card kpi"><span>Productos a reponer</span><strong id="kReponer">0</strong><small>Bajo stock o sin stock</small></article>
+</div>
+<div class="grid cols4">
+  <article class="card kpi"><span>Stock valorizado</span><strong id="kStock">$0</strong><small>Precio compra x stock</small></article>
+  <article class="card kpi"><span>Ticket promedio</span><strong id="kTicket">$0</strong><small>Promedio por venta</small></article>
+  <article class="card kpi"><span>Pacientes deudores</span><strong id="kDebtors">0</strong><small>Con saldo pendiente</small></article>
+  <article class="card kpi"><span>Stock parado</span><strong id="kStuck">0</strong><small>Sin ventas recientes</small></article>
 </div>
 <div class="grid cols2">
-  <section class="card"><h2>Rentabilidad estimada</h2><div class="grid cols3"><div class="kpi"><span>Ganancia clínica</span><strong id="kProfit">$0</strong></div><div class="kpi"><span>Margen</span><strong id="kMargin">0%</strong></div><div class="kpi"><span>Pacientes</span><strong id="kPatients">0</strong></div></div></section>
-  <section class="card"><h2>Acciones rápidas</h2><div class="grid"><a class="btn dark" href="ventas.html">Nueva venta</a><a class="btn primary" href="compras.html">Registrar compra</a><a class="btn" href="pacientes.html">Nuevo paciente</a></div></section>
+  <section class="card"><h2>Alertas inteligentes</h2><div class="alert-list" id="alerts"></div></section>
+  <section class="card chart"><h2>Ventas vs ganancia</h2><div id="chart"></div><p class="help">Línea oscura: ventas. Línea verde: ganancia estimada.</p></section>
 </div>
 <div class="grid cols2">
-  <section class="card"><h2>Productos críticos</h2><div class="tablewrap"><table><thead><tr><th>Producto</th><th>Stock</th><th>Mín.</th></tr></thead><tbody id="criticalRows"></tbody></table></div></section>
-  <section class="card"><h2>Últimas ventas</h2><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Paciente</th><th>Total</th><th>Estado</th></tr></thead><tbody id="salesRows"></tbody></table></div></section>
+  <section class="card"><h2>Top productos por ganancia</h2><div class="tablewrap"><table><thead><tr><th>Producto</th><th>Unidades</th><th>Ganancia</th></tr></thead><tbody id="topProfit"></tbody></table></div></section>
+  <section class="card"><h2>Top productos más vendidos</h2><div class="tablewrap"><table><thead><tr><th>Producto</th><th>Unidades</th><th>Total vendido</th></tr></thead><tbody id="topUnits"></tbody></table></div></section>
+</div>
+<div class="grid cols2">
+  <section class="card"><h2>Principales deudores</h2><div class="tablewrap"><table><thead><tr><th>Paciente</th><th>Saldo</th><th>Días</th></tr></thead><tbody id="debtorsRows"></tbody></table></div></section>
+  <section class="card"><h2>Productos con stock parado</h2><div class="tablewrap"><table><thead><tr><th>Producto</th><th>Stock</th><th>Última venta</th></tr></thead><tbody id="stuckRows"></tbody></table></div></section>
 </div>`;
-mountLayout({active:"dashboard",title:"Dashboard",subtitle:"Control general de stock, ventas, deuda y rentabilidad.",content,uid:user.uid});
-document.getElementById("refreshBtn").onclick = render;
+mountLayout({active:"dashboard",title:"Dashboard",subtitle:"Vista gerencial: ventas, ganancia, deuda, reposición y stock parado.",content,uid:user.uid});
+document.getElementById("refreshBtn").onclick=render;
 await render();
 
 async function render(){
@@ -30,19 +39,39 @@ async function render(){
   const month = new Date().toISOString().slice(0,7);
   const validSales = d.sales.filter(s=>!s.canceled);
   const salesMonth = validSales.filter(s=>String(s.date||"").slice(0,7)===month);
-  const stockValue = d.products.reduce((a,p)=>a+num(p.stock)*num(p.resalePrice),0);
+  const stockValue = d.products.reduce((a,p)=>a+num(p.stock)*num(p.purchasePrice||p.resalePrice),0);
   const debt = validSales.reduce((a,s)=>a+num(s.balance),0);
-  let revenue=0, cost=0;
-  validSales.forEach(s=>(s.items||[]).forEach(i=>{ revenue+=num(i.quantity)*num(i.unitPrice); cost+=num(i.quantity)*num(i.costPrice); }));
-  const profit = revenue-cost;
-  $("kStock").textContent=money.format(stockValue);
-  $("kNoStock").textContent=d.products.filter(p=>p.active!==false&&num(p.stock)<=0).length;
+  const debtPatients = new Set(validSales.filter(s=>num(s.balance)>0).map(s=>s.patientId)).size;
+  const monthProfit = salesMonth.reduce((acc,s)=>acc+(s.items||[]).reduce((a,i)=>a+num(i.quantity)*(num(i.unitPrice)-num(i.costPrice)),0),0);
+  const reponer = d.products.filter(p=>p.active!==false && num(p.stock)<=num(p.minStock||0));
+  const noStock = d.products.filter(p=>p.active!==false && num(p.stock)<=0);
+  const avgTicket = validSales.length ? validSales.reduce((a,s)=>a+num(s.total),0)/validSales.length : 0;
+  const productStats = statsByProduct(validSales);
+  const stuck = stuckProducts(d.products, validSales);
+
   $("kSales").textContent=money.format(salesMonth.reduce((a,s)=>a+num(s.total),0));
+  $("kProfit").textContent=money.format(monthProfit);
   $("kDebt").textContent=money.format(debt);
-  $("kProfit").textContent=money.format(profit);
-  $("kMargin").textContent=revenue?Math.round(profit/revenue*100)+"%":"0%";
-  $("kPatients").textContent=d.patients.filter(p=>p.active!==false).length;
-  const critical=d.products.filter(p=>p.active!==false&&num(p.stock)<=num(p.minStock||0));
-  $("criticalRows").innerHTML=critical.map(p=>`<tr><td><strong>${esc(p.name)}</strong><div class="help">${esc(p.code||"")}</div></td><td>${num(p.stock)<=0?badge("SIN STOCK"):badge("PENDIENTE")} ${num(p.stock)}</td><td>${num(p.minStock)}</td></tr>`).join("")||`<tr><td colspan="3" class="empty">Sin productos críticos.</td></tr>`;
-  $("salesRows").innerHTML=validSales.slice(0,8).map(s=>`<tr><td>${new Date(s.date).toLocaleDateString("es-AR")}</td><td>${esc(s.patientName)}</td><td>${money.format(num(s.total))}</td><td>${badge(s.status)}</td></tr>`).join("")||`<tr><td colspan="4" class="empty">Sin ventas.</td></tr>`;
+  $("kReponer").textContent=reponer.length;
+  $("kStock").textContent=money.format(stockValue);
+  $("kTicket").textContent=money.format(avgTicket);
+  $("kDebtors").textContent=debtPatients;
+  $("kStuck").textContent=stuck.length;
+
+  $("alerts").innerHTML = [
+    noStock.length ? alert("Productos sin stock", `${noStock.length} productos no tienen stock disponible.`, "SIN STOCK") : "",
+    reponer.length ? alert("Reposición necesaria", `${reponer.length} productos están en stock mínimo o por debajo.`, "BAJO STOCK") : "",
+    debt ? alert("Deuda pendiente", `Hay ${money.format(debt)} pendientes de cobro.`, "PENDIENTE") : "",
+    stuck.length ? alert("Stock parado", `${stuck.length} productos tienen stock y no se vendieron recientemente.`, "INFO") : ""
+  ].filter(Boolean).join("") || `<div class="empty">Sin alertas importantes.</div>`;
+
+  $("chart").innerHTML = lineChart(chartPoints(validSales));
+  $("topProfit").innerHTML = productStats.sort((a,b)=>b.profit-a.profit).slice(0,8).map(r=>`<tr><td>${esc(r.product)}</td><td>${r.units}</td><td>${money.format(r.profit)}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">Sin datos.</td></tr>`;
+  $("topUnits").innerHTML = productStats.sort((a,b)=>b.units-a.units).slice(0,8).map(r=>`<tr><td>${esc(r.product)}</td><td>${r.units}</td><td>${money.format(r.total)}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">Sin datos.</td></tr>`;
+  $("debtorsRows").innerHTML = validSales.filter(s=>num(s.balance)>0).sort((a,b)=>num(b.balance)-num(a.balance)).slice(0,8).map(s=>`<tr><td>${esc(s.patientName)}</td><td>${money.format(num(s.balance))}</td><td>${daysBetween(s.date)}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">Sin deudores.</td></tr>`;
+  $("stuckRows").innerHTML = stuck.slice(0,8).map(p=>`<tr><td>${esc(p.name)}</td><td>${num(p.stock)}</td><td>${p.last || "Sin ventas"}</td></tr>`).join("") || `<tr><td colspan="3" class="empty">Sin stock parado.</td></tr>`;
 }
+function alert(title, text, status){return `<div class="alert"><div><strong>${title}</strong><span class="help">${text}</span></div>${badge(status)}</div>`}
+function statsByProduct(sales){const map={};sales.forEach(s=>(s.items||[]).forEach(i=>{map[i.productId]??={product:i.productName,units:0,total:0,profit:0};map[i.productId].units+=num(i.quantity);map[i.productId].total+=num(i.quantity)*num(i.unitPrice);map[i.productId].profit+=num(i.quantity)*(num(i.unitPrice)-num(i.costPrice));}));return Object.values(map)}
+function chartPoints(sales){const map={};sales.forEach(s=>{const key=String(s.date).slice(5,10);map[key]??={label:key,sales:0,profit:0};map[key].sales+=num(s.total);map[key].profit+=(s.items||[]).reduce((a,i)=>a+num(i.quantity)*(num(i.unitPrice)-num(i.costPrice)),0)});return Object.values(map).slice(-12)}
+function stuckProducts(products,sales){return products.filter(p=>p.active!==false&&num(p.stock)>0).map(p=>{let lastSale=null;sales.forEach(s=>(s.items||[]).forEach(i=>{if(i.productId===p.id && (!lastSale||new Date(s.date)>new Date(lastSale)))lastSale=s.date;}));return {...p,last:lastSale?new Date(lastSale).toLocaleDateString("es-AR"):null,days:lastSale?daysBetween(lastSale):9999}}).filter(p=>p.days>60).sort((a,b)=>b.days-a.days)}
