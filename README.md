@@ -1,6 +1,8 @@
-# Dervie SkinCare Manager - Firebase Anonymous
+# Dervie SkinCare Manager
 
-Versión simplificada para el modelo final:
+Sistema interno para gestión de venta de dermocosméticos.
+
+## Modelo del proyecto
 
 ```text
 1 médica / clínica
@@ -8,23 +10,129 @@ Versión simplificada para el modelo final:
 1 proyecto Firebase
 1 Firestore
 1 Firebase Hosting
-Autenticación anónima
+Authentication Anonymous
 ```
 
-No usa multi-clínica, roles ni login visible.
+## Menú operativo
 
-## Tecnología
+La app abre directamente en **Ventas**.
 
-- HTML5
-- CSS3
-- JavaScript Vanilla
-- Firebase Hosting
-- Firebase Authentication Anonymous
-- Firestore
+```text
+Ventas
+Pacientes
+Simulador
+Compras
+Productos
+Deudores / Pagos
+Dashboard
+Reportes
+```
 
-## Colecciones Firestore
+## Cambios principales
 
-Directas, sin prefijo por clínica:
+### Ventas
+
+- Es la pantalla inicial (`index.html`).
+- Tiene botón superior **+ Cargar nuevo paciente**.
+- Permite venta con varios productos.
+- Permite múltiples medios de pago.
+- Permite anular ventas devolviendo stock.
+
+### Pacientes
+
+- Pantalla operativa para carga, edición, baja lógica e historial.
+- Muestra última compra y saldo pendiente.
+- Las estadísticas de pacientes quedan para Dashboard y Reportes.
+
+### Simulador
+
+Nueva pantalla separada:
+
+```text
+simulador.html
+js/simulador.js
+```
+
+No toca stock hasta confirmar.
+
+Regla de descuento por producto:
+
+```text
+1 a 9 unidades     = 0%
+10 a 14 unidades   = 10%
+15 a 19 unidades   = 15%
+20 o más unidades  = 20%
+```
+
+Muestra:
+
+```text
+Total compra
+Ahorro
+Venta sugerida
+Ganancia estimada
+Margen estimado
+Recomendaciones para comprar mejor
+```
+
+### Compras
+
+Queda para registrar compras reales y sumar stock.
+
+Muestra antes de guardar:
+
+```text
+Subtotal
+Descuento
+Total a pagar
+Ganancia estimada
+```
+
+### Productos
+
+La pantalla ya no muestra “reventa”.
+
+El Excel puede traer `Importe reventa`, pero la app lo interpreta como:
+
+```text
+Precio compra
+```
+
+Columnas visibles:
+
+```text
+Producto
+Marca
+Categoría
+Precio compra
+Venta sugerida
+Stock
+Estado
+Acciones
+```
+
+### Dashboard
+
+Incluye indicadores y tablas accionables:
+
+```text
+Ventas del mes
+Ganancia estimada
+Deuda pendiente
+Productos a reponer
+Stock valorizado
+Ticket promedio
+Pacientes deudores
+Stock parado
+Top productos por ganancia
+Top productos más vendidos
+Principales deudores
+Productos con stock parado
+```
+
+## Firestore
+
+Colecciones directas:
 
 ```text
 products
@@ -35,20 +143,17 @@ payments
 stockMovements
 ```
 
-## Activar Firebase Authentication Anonymous
+## Firebase
 
-En Firebase Console:
+Activar:
 
 ```text
-Authentication
-Sign-in method
-Anonymous
-Enable
+Authentication > Anonymous
+Firestore Database
+Firebase Hosting
 ```
 
-## Reglas Firestore
-
-Publicar `firestore.rules`:
+Reglas básicas:
 
 ```js
 rules_version = '2';
@@ -62,42 +167,14 @@ service cloud.firestore {
 }
 ```
 
-## Configuración
-
-Editar:
-
-```text
-js/firebase-config.js
-```
-
-Con el Firebase de cada médica.
-
-## Hosting
-
-Instalar Firebase CLI:
-
-```bash
-npm install -g firebase-tools
-firebase login
-```
-
-Deploy:
+## Deploy
 
 ```bash
 firebase deploy
 ```
 
-## Uso
+Después de cada cambio fuerte, actualizar navegador con:
 
-1. Abrir la URL de Firebase Hosting.
-2. La app inicia sesión anónima automáticamente.
-3. Cargar productos.
-4. Cargar pacientes.
-5. Registrar compras para sumar stock.
-6. Registrar ventas.
-7. Registrar pagos.
-8. Revisar reportes.
-
-## Nota
-
-Como cada médica tendrá su propio Firebase y repo, esta versión prioriza simplicidad. No hay separación por clínica dentro de Firestore porque el proyecto Firebase ya es de una sola médica.
+```text
+Ctrl + F5
+```
