@@ -121,6 +121,14 @@ export async function deactivatePatient(id) {
   await updateDoc(ref("patients", id), { active: false, updatedAt: serverTimestamp() });
 }
 
+export function purchaseDiscountRate(quantity) {
+  const q = n(quantity);
+  if (q >= 20) return 0.20;
+  if (q >= 15) return 0.15;
+  if (q >= 10) return 0.10;
+  return 0;
+}
+
 export async function createPurchase(data) {
   const productId = data.productId;
   const quantity = n(data.quantity);
@@ -135,7 +143,10 @@ export async function createPurchase(data) {
 
     const product = productSnap.data();
     const unitPrice = n(data.unitPrice) || n(product.resalePrice);
-    const total = round(unitPrice * quantity);
+    const subtotal = round(unitPrice * quantity);
+    const discountRate = purchaseDiscountRate(quantity);
+    const discountAmount = round(subtotal * discountRate);
+    const total = round(subtotal - discountAmount);
     const newStock = n(product.stock) + quantity;
 
     tx.update(productRef, { stock: newStock, updatedAt: serverTimestamp() });
@@ -145,6 +156,9 @@ export async function createPurchase(data) {
       productName: product.name,
       quantity,
       unitPrice,
+      subtotal,
+      discountRate,
+      discountAmount,
       total,
       date: data.date || new Date().toISOString().slice(0, 10),
       notes: String(data.notes || ""),
@@ -375,5 +389,7 @@ export async function importProductsFromRows(rows) {
 
   return { inserted, updated, skipped, total: rows.length };
 }
+
+
 
 
