@@ -1,0 +1,11 @@
+import { initAnonymousAuth, loadAll } from "./firebase-service.js";
+import * as FS from "./firebase-service.js";
+import { mountLayout } from "./layout.js";
+import { $, money, num, round, esc, norm, badge, toast, setLoading, openModal, closeModal, csv, today } from "./ui.js";
+const user = await initAnonymousAuth();
+
+const content = `<section class="card"><h2>Nueva compra</h2><form id="purchaseForm"><label>Producto</label><select id="productId" name="productId"></select><div class="formgrid form3"><div><label>Cantidad</label><input name="quantity" type="number" min="1" value="1" required></div><div><label>Precio unitario</label><input name="unitPrice" type="number" min="0" placeholder="Automático"></div><div><label>Fecha</label><input name="date" type="date"></div></div><label>Observaciones</label><textarea name="notes"></textarea><button class="btn primary block" style="margin-top:12px">Guardar compra y sumar stock</button></form></section><section class="card"><h2>Compras recientes</h2><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>Unitario</th><th>Total</th></tr></thead><tbody id="rows"></tbody></table></div></section>`;
+mountLayout({active:"compras",title:"Compras",subtitle:"Registro de compras e ingreso automático de stock.",content,uid:user.uid});
+let all={};document.getElementById("refreshBtn").onclick=load;await load();
+async function load(){setLoading(true,"Cargando compras...");all=await loadAll();setLoading(false);$("productId").innerHTML=all.products.filter(p=>p.active!==false).map(p=>`<option value="${p.id}">${esc(p.name)} · stock ${num(p.stock)}</option>`).join("");$("rows").innerHTML=all.purchases.map(c=>`<tr><td>${esc(c.date||"")}</td><td>${esc(c.productName)}</td><td>${num(c.quantity)}</td><td>${money.format(num(c.unitPrice))}</td><td>${money.format(num(c.total))}</td></tr>`).join("")||`<tr><td colspan="5" class="empty">Sin compras.</td></tr>`}
+$("purchaseForm").onsubmit=async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));setLoading(true,"Guardando compra...");await FS.createPurchase(data);toast("Compra guardada y stock actualizado","ok");e.target.reset();await load();setLoading(false)}
