@@ -83,6 +83,24 @@ export async function loadAll() {
   return { products, patients, purchases, sales, payments, stockMovements };
 }
 
+async function listAllDocs(name) {
+  const snap = await getDocs(col(name));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function loadReportingData() {
+  const [products, patients, purchases, sales, payments, stockMovements] = await Promise.all([
+    listAllDocs("products"),
+    listAllDocs("patients"),
+    listAllDocs("purchases"),
+    listAllDocs("sales"),
+    listAllDocs("payments"),
+    listAllDocs("stockMovements")
+  ]);
+
+  return { products, patients, purchases, sales, payments, stockMovements };
+}
+
 export async function saveProduct(product) {
   const id = product.id || product.code || makeId("PROD");
   const priceCompra = n(product.purchasePrice || product.resalePrice);
