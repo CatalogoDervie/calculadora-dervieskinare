@@ -50,6 +50,18 @@ export function round(v) {
   return Math.round((n(v) + Number.EPSILON) * 100) / 100;
 }
 
+function positiveInteger(value, label = "Cantidad") {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) throw new Error(`${label} debe ser un número entero mayor a cero.`);
+  return parsed;
+}
+
+function nonNegativeMoney(value, label) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) throw new Error(`${label} debe ser un importe válido mayor o igual a cero.`);
+  return round(parsed);
+}
+
 export function purchaseDiscountRate(quantity) {
   const q = n(quantity);
   if (q >= 20) return 0.20;
@@ -88,6 +100,9 @@ export async function saveProduct(product) {
     updatedAt: serverTimestamp()
   };
   if (!payload.name) throw new Error("El producto necesita nombre.");
+  if (!Number.isInteger(Number(product.stock)) || payload.stock < 0) throw new Error("El stock debe ser un entero mayor o igual a cero.");
+  if (!Number.isInteger(Number(product.minStock || 3)) || payload.minStock < 0) throw new Error("El stock mínimo debe ser un entero mayor o igual a cero.");
+  if (payload.purchasePrice < 0 || payload.suggestedSalePrice < 0) throw new Error("Los precios no pueden ser negativos.");
   await setDoc(ref("products", id), { ...payload, createdAt: product.id ? product.createdAt || serverTimestamp() : serverTimestamp() }, { merge: true });
   return id;
 }
@@ -171,8 +186,8 @@ export async function deactivatePatient(id) {
 
 export async function createPurchase(data) {
   const productId = data.productId;
-  const quantity = n(data.quantity);
-  if (!productId || quantity <= 0) throw new Error("Producto o cantidad inválida.");
+  const quantity = positiveInteger(data.quantity);
+  if (!productId) throw new Error("Seleccioná un producto.");
 
   const id = makeId("COMPRA");
 
@@ -182,7 +197,10 @@ export async function createPurchase(data) {
     if (!productSnap.exists()) throw new Error("Producto inexistente.");
 
     const product = productSnap.data();
-    const unitPrice = n(data.unitPrice) || n(product.purchasePrice || product.resalePrice);
+    const unitPrice = data.unitPrice === "" || data.unitPrice == null
+      ? nonNegativeMoney(product.purchasePrice || product.resalePrice, "Precio de compra")
+      : nonNegativeMoney(data.unitPrice, "Precio de compra");
+    if (unitPrice <= 0) throw new Error("El precio de compra debe ser mayor a cero.");
     const subtotal = round(unitPrice * quantity);
     const discountRate = purchaseDiscountRate(quantity);
     const discountAmount = round(subtotal * discountRate);
@@ -238,9 +256,11 @@ export async function createPurchaseBatch(items, notes = "") {
 
     for (const { productRef, productSnap, item } of reads) {
       const p = productSnap.data();
-      const quantity = n(item.quantity);
-      if (quantity <= 0) throw new Error("Cantidad inválida.");
-      const unitPrice = n(item.unitPrice) || n(p.purchasePrice || p.resalePrice);
+      const quantity = positiveInteger(item.quantity);
+      const unitPrice = item.unitPrice === "" || item.unitPrice == null
+        ? nonNegativeMoney(p.purchasePrice || p.resalePrice, "Precio de compra")
+        : nonNegativeMoney(item.unitPrice, "Precio de compra");
+      if (unitPrice <= 0) throw new Error("El precio de compra debe ser mayor a cero.");
       const subtotal = round(unitPrice * quantity);
       const discountRate = purchaseDiscountRate(quantity);
       const discountAmount = round(subtotal * discountRate);
@@ -296,20 +316,39 @@ export async function createSale(data) {
     if (!patientSnap.exists()) throw new Error("Paciente inexistente.");
     const patient = patientSnap.data();
 
+    const groupedItems = new Map();
+    for (const rawItem of data.items) {
+      if (!rawItem.productId) throw new Error("Hay un producto inválido en la venta.");
+      const quantity = positiveInteger(rawItem.quantity);
+      const unitPrice = nonNegativeMoney(rawItem.unitPrice, "Precio de venta");
+      if (unitPrice <= 0) throw new Error("El precio de venta debe ser mayor a cero.");
+      const current = groupedItems.get(rawItem.productId);
+      if (current && current.unitPrice !== unitPrice) throw new Error(`El producto ${rawItem.productName || "seleccionado"} está repetido con precios diferentes.`);
+      groupedItems.set(rawItem.productId, current
+        ? { ...current, quantity: current.quantity + quantity }
+        : { ...rawItem, quantity, unitPrice, costPrice: nonNegativeMoney(rawItem.costPrice, "Precio de compra") });
+    }
+    const saleItems = [...groupedItems.values()];
+    const discountRate = Number(data.discountRate ?? 0);
+    if (!Number.isFinite(discountRate) || discountRate < 0 || discountRate > 1) throw new Error("El descuento debe estar entre 0% y 100%.");
+
     const productSnaps = [];
-    for (const item of data.items) {
+    for (const item of saleItems) {
       const productRef = ref("products", item.productId);
       const productSnap = await tx.get(productRef);
       if (!productSnap.exists()) throw new Error("Producto inexistente.");
       const p = productSnap.data();
-      if (n(p.stock) < n(item.quantity)) throw new Error(`Stock insuficiente: ${p.name}. Disponible: ${n(p.stock)}`);
+      if (p.active === false) throw new Error(`El producto ${p.name} está inactivo.`);
+      if (n(p.stock) <= 0) throw new Error(`Sin stock: ${p.name}.`);
+      if (n(p.stock) < item.quantity) throw new Error(`Stock insuficiente: ${p.name}. Disponible: ${n(p.stock)}.`);
       productSnaps.push({ productRef, productSnap, item });
     }
 
-    const subtotal = data.items.reduce((a, i) => a + n(i.quantity) * n(i.unitPrice), 0);
-    const discountAmount = round(subtotal * n(data.discountRate));
+    const subtotal = round(saleItems.reduce((a, i) => a + i.quantity * i.unitPrice, 0));
+    const discountAmount = round(subtotal * discountRate);
     const total = round(subtotal - discountAmount);
-    const paid = round((data.payments || []).reduce((a, p) => a + n(p.amount), 0));
+    const payments = (data.payments || []).map(p => ({ ...p, amount: nonNegativeMoney(p.amount, "Pago") }));
+    const paid = round(payments.reduce((a, p) => a + p.amount, 0));
 
     if (paid > total) throw new Error("El pago no puede superar el total.");
 
@@ -320,9 +359,9 @@ export async function createSale(data) {
       id,
       patientId: data.patientId,
       patientName: patient.fullName,
-      items: data.items,
+      items: saleItems,
       subtotal,
-      discountRate: n(data.discountRate),
+      discountRate,
       discountAmount,
       total,
       paid,
@@ -350,7 +389,7 @@ export async function createSale(data) {
       });
     }
 
-    for (const pay of data.payments || []) {
+    for (const pay of payments) {
       if (n(pay.amount) <= 0) continue;
       tx.set(ref("payments", makeId("PAGO")), {
         saleId: id,

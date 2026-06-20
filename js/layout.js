@@ -1,51 +1,80 @@
 import { appConfig } from "./firebase-config.js";
 
-const nav = [
-  ["index.html","Ventas","🧾","ventas"],
-  ["pacientes.html","Pacientes","👤","pacientes"],
-  ["simulador.html","Simulador","🧮","simulador"],
-  ["compras.html","Compras","📦","compras"],
-  ["productos.html","Productos","🧴","productos"],
-  ["pagos.html","Deudores / Pagos","💳","pagos"],
-  ["dashboard.html","Dashboard","📊","dashboard"],
-  ["reportes.html","Reportes","📈","reportes"]
+const navGroups = [
+  {
+    label: "Operación diaria",
+    items: [
+      ["index.html", "Ventas", "ventas"],
+      ["pacientes.html", "Pacientes", "pacientes"],
+      ["compras.html", "Compras", "compras"],
+      ["productos.html", "Productos y stock", "productos"]
+    ]
+  },
+  {
+    label: "Gestión y análisis",
+    items: [
+      ["pagos.html", "Cobros pendientes", "pagos"],
+      ["dashboard.html", "Resumen", "dashboard"],
+      ["reportes.html", "Reportes", "reportes"],
+      ["simulador.html", "Simulador", "simulador"]
+    ]
+  }
 ];
 
 export function mountLayout({ active, title, subtitle, content, uid = "" }) {
-  const theme = localStorage.getItem("theme") || "light";
-  document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.theme = "light";
+
+  const navigation = navGroups.map(group => `
+    <div class="nav-group">
+      <p class="nav-title">${group.label}</p>
+      ${group.items.map(([href, label, key]) => `
+        <a class="${key === active ? "active" : ""}" href="${href}">
+          <span class="nav-dot" aria-hidden="true"></span>
+          <span>${label}</span>
+        </a>`).join("")}
+    </div>`).join("");
 
   document.body.innerHTML = `
-  <div class="mobile"><img src="assets/logo.svg"><button class="menubtn" id="menuBtn">☰</button></div>
+  <div class="mobile">
+    <a href="index.html"><img src="assets/logo.svg" alt="Dervie SkinCare Manager"></a>
+    <button class="menubtn" id="menuBtn" aria-label="Abrir menú" aria-expanded="false">Menú</button>
+  </div>
   <div class="app">
     <aside class="side">
-      <a class="logo" href="index.html"><img src="assets/logo.svg" alt="Dervie"></a>
-      <nav class="nav">
-        ${nav.map(([href,label,icon,key]) => `<a class="${key===active?'active':''}" href="${href}"><span>${icon}</span>${label}</a>`).join("")}
-      </nav>
+      <a class="logo" href="index.html"><img src="assets/logo.svg" alt="Dervie SkinCare Manager"></a>
+      <nav class="nav" aria-label="Navegación principal">${navigation}</nav>
       <div class="side-foot">
         <div class="userbox">
           <strong>${appConfig.clinicName}</strong>
-          <span>Firebase Anonymous ${uid ? "· " + uid.slice(0,8) + "..." : ""}</span>
+          <span>Sesión segura ${uid ? `· ${uid.slice(0, 8)}` : ""}</span>
         </div>
-        <button class="btn ghost" id="themeBtn">Modo ${theme === "dark" ? "claro" : "oscuro"}</button>
       </div>
     </aside>
     <main class="main">
       <header class="top">
-        <div><p class="eyebrow">Gestión interna</p><h1>${title}</h1><p class="muted">${subtitle}</p></div>
-        <div class="actions"><button class="btn ghost" id="refreshBtn">Actualizar</button></div>
+        <div class="page-heading">
+          <p class="eyebrow">Panel administrativo</p>
+          <h1>${title}</h1>
+          <p class="muted">${subtitle}</p>
+        </div>
+        <div class="actions"><button class="btn ghost" id="refreshBtn">Actualizar datos</button></div>
       </header>
       ${content}
     </main>
   </div>
-  <div id="toast" class="toast"></div>
-  <div id="loading" class="loading"><div class="loadcard"><div class="spin"></div><strong id="loadingText">Cargando...</strong><p class="muted">No cierres la página.</p></div></div>`;
+  <button class="menu-backdrop" id="menuBackdrop" aria-label="Cerrar menú"></button>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="loading" class="loading"><div class="loadcard"><div class="spin"></div><strong id="loadingText">Cargando...</strong><p class="muted">Estamos actualizando la información.</p></div></div>`;
 
-  document.getElementById("menuBtn").onclick = () => document.body.classList.toggle("menu-open");
-  document.getElementById("themeBtn").onclick = () => {
-    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    localStorage.setItem("theme", next);
-    location.reload();
+  const menuButton = document.getElementById("menuBtn");
+  const closeMenu = () => {
+    document.body.classList.remove("menu-open");
+    menuButton.setAttribute("aria-expanded", "false");
   };
+  menuButton.onclick = () => {
+    const isOpen = document.body.classList.toggle("menu-open");
+    menuButton.setAttribute("aria-expanded", String(isOpen));
+  };
+  document.getElementById("menuBackdrop").onclick = closeMenu;
+  document.querySelectorAll(".nav a").forEach(link => link.addEventListener("click", closeMenu));
 }
