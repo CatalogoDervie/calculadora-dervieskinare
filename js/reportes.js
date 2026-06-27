@@ -1,5 +1,5 @@
-import { initAnonymousAuth, loadReportingData } from "./firebase-service.js?v=20260627e";
-import { mountLayout } from "./layout.js?v=20260627e";
+import { initAnonymousAuth, loadReportingData } from "./firebase-service.js?v=20260627f";
+import { mountLayout } from "./layout.js?v=20260627f";
 import { $, money, num, round, esc, toast, setLoading, csv } from "./ui.js";
 
 const user = await initAnonymousAuth();
