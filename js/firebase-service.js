@@ -11,11 +11,26 @@ export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 
 export function initAnonymousAuth() {
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+
   return new Promise((resolve, reject) => {
-    onAuthStateChanged(auth, user => {
-      if (user) resolve(user);
+    let requestedSignIn = false;
+    let unsubscribe = () => {};
+    unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        unsubscribe();
+        resolve(user);
+        return;
+      }
+
+      if (!requestedSignIn) {
+        requestedSignIn = true;
+        signInAnonymously(auth).catch(error => {
+          unsubscribe();
+          reject(error);
+        });
+      }
     });
-    signInAnonymously(auth).catch(reject);
   });
 }
 
