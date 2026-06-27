@@ -16,7 +16,8 @@ const navGroups = [
       ["pagos.html", "Cobros pendientes", "pagos"],
       ["dashboard.html", "Resumen", "dashboard"],
       ["reportes.html", "Reportes", "reportes"],
-      ["simulador.html", "Simulador", "simulador"]
+      ["simulador.html", "Simulador", "simulador"],
+      ["catalogo.html", "Catalogo", "catalogo"]
     ]
   }
 ];
