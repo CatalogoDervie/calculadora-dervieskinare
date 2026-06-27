@@ -1,54 +1,99 @@
-import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627b";
-import { mountLayout } from "./layout.js?v=20260627b";
+import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627c";
+import { mountLayout } from "./layout.js?v=20260627c";
 import { $, money, num, esc, setLoading } from "./ui.js";
+import { featuredCatalog, packGuides, findProduct, marginFor } from "./catalog-data.js?v=20260627c";
 
 const user = await initAnonymousAuth();
 
-const featuredCatalog = [
-  { key:"agua-micelar", names:["agua micelar"], title:"Agua Micelar", category:"Limpieza suave", image:"assets/catalogo/agua-micelar.jpg", use:"Primer paso para retirar impurezas sin complejizar la rutina.", stage:"Rutina esencial" },
-  { key:"serum-niacinamida", names:["serum niacinamida","niacinamida"], title:"Serum Niacinamida", category:"Serum diario", image:"assets/catalogo/serum-niacinamida.jpg", use:"Producto central por textura liviana y buena rotacion.", stage:"Rutina esencial" },
-  { key:"hialcrem", names:["hialcrem"], title:"Hialcrem", category:"Hidratacion liviana", image:"assets/catalogo/hialcrem.jpg", use:"Cierra la rutina diaria con hidratacion de uso cotidiano.", stage:"Rutina esencial" },
-  { key:"dermocalmante", names:["dermocalmante"], title:"Dermocalmante", category:"Piel sensible", image:"assets/catalogo/dermocalmante.jpg", use:"Alternativa de confort para piel sensible o sensibilizada.", stage:"Segunda etapa" },
-  { key:"espuma-termal", names:["espuma termal"], title:"Espuma Termal", category:"Higiene diaria", image:"assets/catalogo/espuma-termal.jpg", use:"Limpieza con enjuague para rutina general.", stage:"Alternativa limpieza" },
-  { key:"espuma-oil-control", names:["espuma oil control","oil control"], title:"Espuma Oil Control", category:"Piel grasa", image:"assets/catalogo/espuma-oil-control.jpg", use:"Limpieza especifica para mayor oleosidad.", stage:"Alternativa limpieza" },
-  { key:"serum-vitamina-c", names:["serum vitamina c","vitamina c +","vitamina c"], title:"Serum Vitamina C", category:"Luminosidad", image:"assets/catalogo/serum-vitamina-c.jpg", use:"Incorporacion diurna para luminosidad y aspecto general.", stage:"Segunda etapa" },
-  { key:"calendula", names:["calendula"], title:"Calendula", category:"Nutricion y confort", image:"assets/catalogo/calendula.jpg", use:"Textura mas nutritiva para ampliar la propuesta.", stage:"Segunda etapa" }
-];
+const content = `
+<section class="catalog-brief">
+  <article>
+    <span class="section-kicker">Catalogo comercial</span>
+    <h2>Ocho productos para comenzar con una propuesta clara</h2>
+    <p>Una seleccion breve para presentar la linea, calcular margen por unidad y ordenar las primeras rutinas sin cargar un stock demasiado amplio.</p>
+  </article>
+  <div class="catalog-brief-actions">
+    <a class="btn primary" href="simulador.html">Abrir simulador</a>
+    <a class="btn ghost" href="productos.html">Ver productos</a>
+  </div>
+</section>
 
-const packGuides = [
-  { title:"Rutina esencial", tag:"Inicio recomendado", products:["Agua Micelar","Serum Niacinamida","Hialcrem"], note:"El pack mas simple para comenzar: limpieza + serum + hidratacion." },
-  { title:"Rutina con limpieza en espuma", tag:"General", products:["Espuma Termal","Serum Niacinamida","Hialcrem"], note:"Mantiene los tres pasos, reemplazando el limpiador por espuma." },
-  { title:"Rutina para piel grasa", tag:"Oil control", products:["Espuma Oil Control","Serum Niacinamida","Hialcrem"], note:"Una alternativa clara para pacientes con mayor oleosidad." },
-  { title:"Piel sensible o sensibilizada", tag:"Confort", products:["Agua Micelar","Serum Niacinamida","Dermocalmante"], note:"Rutina suave orientada a confort y tolerancia." },
-  { title:"Luminosidad diurna", tag:"Dia", products:["Agua Micelar","Serum Vitamina C","Hialcrem"], note:"Pack facil de explicar para luminosidad y cuidado diario." },
-  { title:"Segunda etapa de stock", tag:"Ampliacion", products:["Dermocalmante","Calendula","Serum Vitamina C"], note:"Productos para sumar luego de evaluar consultas y reposicion." }
-];
+<section class="grid cols3" id="catalogStats"></section>
 
-const content = `<section class="card"><h2>Catalogo principal para vender mejor</h2><p class="muted">Ocho productos para presentar la linea sin hacer una propuesta demasiado extensa. Cada tarjeta toma los precios cargados en Productos para calcular margen y ganancia estimada.</p><div class="featured-catalog" id="featuredCatalog"></div></section><section class="card"><h2>Packs recomendados</h2><p class="muted">Formas simples de ofrecer la linea: empezar con tres pasos, cambiar el limpiador segun piel y ampliar luego segun rotacion.</p><div class="pack-grid" id="packGrid"></div></section>`;
+<section class="card">
+  <div class="catalog-section-head">
+    <div>
+      <h2>Catalogo principal para vender mejor</h2>
+      <p class="muted">Cada tarjeta toma los precios cargados en Productos para calcular margen y ganancia estimada.</p>
+    </div>
+    <div class="catalog-filters" id="stageFilters"></div>
+  </div>
+  <div class="featured-catalog" id="featuredCatalog"></div>
+</section>
+
+<section class="card">
+  <div class="catalog-section-head">
+    <div>
+      <h2>Packs recomendados</h2>
+      <p class="muted">Formas simples de ofrecer la linea: empezar con tres pasos, cambiar el limpiador segun piel y ampliar luego segun rotacion.</p>
+    </div>
+  </div>
+  <div class="pack-grid" id="packGrid"></div>
+</section>`;
 
 mountLayout({ active:"catalogo", title:"Catalogo Dervie", subtitle:"Productos principales, margen por unidad y packs recomendados para vender la linea.", content, uid:user.uid });
 
 document.getElementById("refreshBtn").onclick = load;
 
 let all = {};
+let currentStage = "Todos";
+
 await load();
 
 async function load(){
   setLoading(true, "Cargando catalogo...");
   all = await loadAll();
   setLoading(false);
+  drawStageFilters();
   drawCatalog();
 }
 
-function normalize(value){ return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
-function findProduct(names){ return all.products.find(p => names.some(name => normalize(p.name).includes(normalize(name)))); }
-function marginFor(product){ const buy = num(product?.purchasePrice || product?.resalePrice); const sale = num(product?.suggestedSalePrice); const profit = sale - buy; return { buy, sale, profit, margin: sale > 0 ? profit / sale : 0 }; }
+function drawStageFilters(){
+  const stages = ["Todos", ...new Set(featuredCatalog.map(item => item.stage))];
+  $("stageFilters").innerHTML = stages.map(stage => `<button class="btn ${stage === currentStage ? "primary" : "ghost"}" data-stage="${esc(stage)}">${esc(stage)}</button>`).join("");
+  $("stageFilters").querySelectorAll("button").forEach(button => {
+    button.onclick = () => {
+      currentStage = button.dataset.stage;
+      drawStageFilters();
+      drawCatalog();
+    };
+  });
+}
+
+function catalogRows(){
+  return featuredCatalog.map(item => {
+    const product = findProduct(all.products, item.names);
+    return { item, product, margin: marginFor(product, num) };
+  });
+}
+
+function drawStats(rows){
+  const priced = rows.filter(row => row.product);
+  const avgMargin = priced.length ? priced.reduce((acc, row) => acc + row.margin.margin, 0) / priced.length : 0;
+  const avgProfit = priced.length ? priced.reduce((acc, row) => acc + row.margin.profit, 0) / priced.length : 0;
+  $("catalogStats").innerHTML = `
+    <article class="card kpi"><span>Productos principales</span><strong>${rows.length}</strong><small>Seleccion inicial de catalogo</small></article>
+    <article class="card kpi"><span>Margen promedio</span><strong>${Math.round(avgMargin * 100)}%</strong><small>Segun precios cargados</small></article>
+    <article class="card kpi"><span>Ganancia promedio</span><strong>${money.format(avgProfit)}</strong><small>Por unidad sugerida</small></article>`;
+}
 
 function drawCatalog(){
-  $("featuredCatalog").innerHTML = featuredCatalog.map(item => {
-    const product = findProduct(item.names);
-    const m = marginFor(product);
-    return `<article class="catalog-product">
+  const rows = catalogRows();
+  const visibleRows = currentStage === "Todos" ? rows : rows.filter(row => row.item.stage === currentStage);
+  drawStats(rows);
+
+  $("featuredCatalog").innerHTML = visibleRows.map(({ item, product, margin }) => `
+    <article class="catalog-product">
       <img src="${item.image}" alt="${esc(item.title)}" loading="lazy">
       <div class="catalog-product-body">
         <small>${esc(item.stage)}</small>
@@ -56,18 +101,17 @@ function drawCatalog(){
         <span>${esc(item.category)}</span>
         <p>${esc(item.use)}</p>
         <div class="catalog-metrics">
-          <b>${product ? money.format(m.sale) : "Sin precio"}</b>
-          <em>Margen ${product ? Math.round(m.margin * 100) + "%" : "-"}</em>
-          <em>Gana ${product ? money.format(m.profit) : "-"}</em>
+          <b>${product ? money.format(margin.sale) : "Sin precio"}</b>
+          <em>Margen ${product ? Math.round(margin.margin * 100) + "%" : "-"}</em>
+          <em>Gana ${product ? money.format(margin.profit) : "-"}</em>
         </div>
       </div>
-    </article>`;
-  }).join("");
+    </article>`).join("");
 
   $("packGrid").innerHTML = packGuides.map(pack => {
-    const found = pack.products.map(name => findProduct([name])).filter(Boolean);
+    const found = pack.products.map(name => findProduct(all.products, [name])).filter(Boolean);
     const totals = found.reduce((acc, product) => {
-      const m = marginFor(product);
+      const m = marginFor(product, num);
       acc.sale += m.sale;
       acc.profit += m.profit;
       return acc;
@@ -78,6 +122,7 @@ function drawCatalog(){
       <p>${esc(pack.note)}</p>
       <ul>${pack.products.map(product => `<li>${esc(product)}</li>`).join("")}</ul>
       <div class="pack-total"><span>Venta pack</span><strong>${found.length ? money.format(totals.sale) : "Completar precios"}</strong><span>Ganancia estimada</span><strong>${found.length ? money.format(totals.profit) : "-"}</strong></div>
+      <a class="btn ghost block pack-action" href="simulador.html?pack=${encodeURIComponent(pack.key)}">Simular pack</a>
     </article>`;
   }).join("");
 }

@@ -1,7 +1,8 @@
-import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627b";
-import * as FS from "./firebase-service.js?v=20260627b";
-import { mountLayout } from "./layout.js?v=20260627b";
+import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627c";
+import * as FS from "./firebase-service.js?v=20260627c";
+import { mountLayout } from "./layout.js?v=20260627c";
 import { $, money, num, esc, badge, toast, setLoading } from "./ui.js";
+import { packGuides, findProduct } from "./catalog-data.js?v=20260627c";
 
 const user = await initAnonymousAuth();
 
@@ -26,6 +27,7 @@ async function load(){
   $("product").onchange = () => { const p = prod(); $("unitPrice").value = num(p?.purchasePrice || p?.resalePrice); suggest(); };
   $("qty").oninput = suggest;
   $("product").dispatchEvent(new Event("change"));
+  loadPackFromQuery();
   draw();
 }
 
@@ -50,6 +52,25 @@ function add(){
   if(!p || q <= 0) return toast("Producto/cantidad invalida", "bad");
   items.push({ productId:p.id, productName:p.name, quantity:q, unitPrice:price, suggestedSalePrice:num(p.suggestedSalePrice) });
   draw();
+}
+
+function loadPackFromQuery(){
+  const packKey = new URLSearchParams(location.search).get("pack");
+  if(!packKey || items.length) return;
+  const pack = packGuides.find(item => item.key === packKey);
+  if(!pack) return;
+  items = pack.products.map(name => {
+    const product = findProduct(all.products, [name]);
+    if(!product) return null;
+    return {
+      productId: product.id,
+      productName: product.name,
+      quantity: 1,
+      unitPrice: num(product.purchasePrice || product.resalePrice),
+      suggestedSalePrice: num(product.suggestedSalePrice)
+    };
+  }).filter(Boolean);
+  if(items.length) toast(`Pack cargado: ${pack.title}`, "ok");
 }
 
 function calcItem(i){
