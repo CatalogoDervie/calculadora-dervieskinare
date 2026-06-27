@@ -1,7 +1,7 @@
-import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627c";
-import { mountLayout } from "./layout.js?v=20260627c";
+import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627e";
+import { mountLayout } from "./layout.js?v=20260627e";
 import { $, money, num, esc, setLoading } from "./ui.js";
-import { featuredCatalog, packGuides, findProduct, marginFor } from "./catalog-data.js?v=20260627c";
+import { featuredCatalog, packGuides, findProduct, marginFor, packProducts } from "./catalog-data.js?v=20260627e";
 
 const user = await initAnonymousAuth();
 
@@ -100,6 +100,11 @@ function drawCatalog(){
         <h3>${esc(item.title)}</h3>
         <span>${esc(item.category)}</span>
         <p>${esc(item.use)}</p>
+        <details class="product-detail">
+          <summary>Ver detalles</summary>
+          <p>${esc(item.detail)}</p>
+          <span>${esc(item.pairing)}</span>
+        </details>
         <div class="catalog-metrics">
           <b>${product ? money.format(margin.sale) : "Sin precio"}</b>
           <em>Margen ${product ? Math.round(margin.margin * 100) + "%" : "-"}</em>
@@ -109,20 +114,29 @@ function drawCatalog(){
     </article>`).join("");
 
   $("packGrid").innerHTML = packGuides.map(pack => {
-    const found = pack.products.map(name => findProduct(all.products, [name])).filter(Boolean);
-    const totals = found.reduce((acc, product) => {
-      const m = marginFor(product, num);
-      acc.sale += m.sale;
-      acc.profit += m.profit;
-      return acc;
-    }, { sale:0, profit:0 });
+    const variants = pack.variants?.length ? pack.variants : [{ label:"Pack completo", products: packProducts(pack) }];
     return `<article class="pack-card">
       <small>${esc(pack.tag)}</small>
       <h3>${esc(pack.title)}</h3>
       <p>${esc(pack.note)}</p>
-      <ul>${pack.products.map(product => `<li>${esc(product)}</li>`).join("")}</ul>
-      <div class="pack-total"><span>Venta pack</span><strong>${found.length ? money.format(totals.sale) : "Completar precios"}</strong><span>Ganancia estimada</span><strong>${found.length ? money.format(totals.profit) : "-"}</strong></div>
-      <a class="btn ghost block pack-action" href="simulador.html?pack=${encodeURIComponent(pack.key)}">Simular pack</a>
+      <div class="pack-variants">
+        ${variants.map((variant, index) => {
+          const found = variant.products.map(name => findProduct(all.products, [name])).filter(Boolean);
+          const totals = found.reduce((acc, product) => {
+            const m = marginFor(product, num);
+            acc.sale += m.sale;
+            acc.profit += m.profit;
+            return acc;
+          }, { sale:0, profit:0 });
+          const complete = found.length === variant.products.length;
+          return `<div class="pack-variant">
+            <b>${esc(variant.label)}</b>
+            <ul>${variant.products.map(product => `<li>${esc(product)}</li>`).join("")}</ul>
+            <div class="pack-total"><span>Venta pack</span><strong>${complete ? money.format(totals.sale) : "Completar precios"}</strong><span>Ganancia estimada</span><strong>${complete ? money.format(totals.profit) : "-"}</strong></div>
+            <a class="btn ghost block pack-action" href="simulador.html?pack=${encodeURIComponent(pack.key)}&variant=${index}">Simular esta opcion</a>
+          </div>`;
+        }).join("")}
+      </div>
     </article>`;
   }).join("");
 }

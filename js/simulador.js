@@ -1,8 +1,8 @@
-import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627c";
-import * as FS from "./firebase-service.js?v=20260627c";
-import { mountLayout } from "./layout.js?v=20260627c";
+import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627e";
+import * as FS from "./firebase-service.js?v=20260627e";
+import { mountLayout } from "./layout.js?v=20260627e";
 import { $, money, num, esc, badge, toast, setLoading } from "./ui.js";
-import { packGuides, findProduct } from "./catalog-data.js?v=20260627c";
+import { packGuides, findProduct, packProducts } from "./catalog-data.js?v=20260627e";
 
 const user = await initAnonymousAuth();
 
@@ -55,11 +55,14 @@ function add(){
 }
 
 function loadPackFromQuery(){
-  const packKey = new URLSearchParams(location.search).get("pack");
+  const params = new URLSearchParams(location.search);
+  const packKey = params.get("pack");
   if(!packKey || items.length) return;
   const pack = packGuides.find(item => item.key === packKey);
   if(!pack) return;
-  items = pack.products.map(name => {
+  const variantIndex = num(params.get("variant"));
+  const selectedProducts = packProducts(pack, variantIndex);
+  items = selectedProducts.map(name => {
     const product = findProduct(all.products, [name]);
     if(!product) return null;
     return {
@@ -70,7 +73,8 @@ function loadPackFromQuery(){
       suggestedSalePrice: num(product.suggestedSalePrice)
     };
   }).filter(Boolean);
-  if(items.length) toast(`Pack cargado: ${pack.title}`, "ok");
+  const variantLabel = pack.variants?.[variantIndex]?.label;
+  if(items.length) toast(`Pack cargado: ${pack.title}${variantLabel ? " - " + variantLabel : ""}`, "ok");
 }
 
 function calcItem(i){

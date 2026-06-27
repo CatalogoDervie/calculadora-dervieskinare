@@ -32,7 +32,8 @@ export function setLoading(show, text="Cargando...") {
     document.body.appendChild(el);
   }
   $("loadingText").textContent = text;
-  el.classList.toggle("show", Boolean(show));
+  const passiveLoad = Boolean(show) && /^Cargando/i.test(String(text));
+  el.classList.toggle("show", Boolean(show) && !passiveLoad);
 }
 
 export function badge(status) {
