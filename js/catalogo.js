@@ -1,7 +1,7 @@
-import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627f";
-import { mountLayout } from "./layout.js?v=20260627f";
+import { initAnonymousAuth, loadAll } from "./firebase-service.js?v=20260627e";
+import { mountLayout } from "./layout.js?v=20260627e";
 import { $, money, num, esc, setLoading } from "./ui.js";
-import { featuredCatalog, packGuides, findProduct, marginFor, packProducts } from "./catalog-data.js?v=20260627f";
+import { featuredCatalog, packGuides, findProduct, marginFor, packProducts } from "./catalog-data.js?v=20260627e";
 
 const user = await initAnonymousAuth();
 
